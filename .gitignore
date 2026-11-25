@@ -1,0 +1,28 @@
+# environments and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# data: raw vendor snapshots (unofficial / licensed) are never committed
+/data/raw/
+/data/execution/
+/data/derived/comparables/comparables_daily.csv
+/outputs/
+
+# exploratory helpers with local paths to licensed data
+/scripts/comparables/find.py
+/scripts/comparables/find2.py
+/scripts/comparables/insp_schema.py
+/scripts/comparables/brcm_chk.py
+
+# never commit execution secrets or exports
+*.token
+service_token
+plan_*.json
+plan_*.csv
+.env
+.env.*

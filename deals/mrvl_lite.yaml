@@ -1,0 +1,81 @@
+# Marvell Technology (MRVL) / Lumentum Holdings (LITE) - verified deal terms.
+# Every field below comes from a primary source (merger agreement, 8-K, press release) unless marked "assumption".
+# Section numbers refer to the Agreement and Plan of Merger dated 2026-11-01 (Exhibit 2.1 to Marvell's 8-K).
+
+id: MRVL-LITE-2026
+name: "Marvell Technology / Lumentum Holdings"
+status: pending            # pending | completed | terminated
+
+acquirer:
+  ticker: MRVL
+  name: "Marvell Technology, Inc."
+  cik: 1835632
+  exchange: NASDAQ
+target:
+  ticker: LITE
+  name: "Lumentum Holdings Inc."
+  cik: 1633978
+  exchange: NASDAQ
+
+consideration:
+  type: stock
+  exchange_ratio: 4.5        # s3.1(a)(i): "4.50 fully paid and nonassessable shares of Parent Common Stock (the 'Exchange Ratio')"
+  cash_per_share: 0.0        # all-stock; no cash component
+  collar: none               # fixed ratio; no collar, walk-away or price-adjustment mechanism in the agreement
+  fractional_shares: "cash in lieu (s3.1(e)); Excess Shares sold on Nasdaq by the Exchange Agent"
+  ratio_adjustment: "s3.3: equitably adjusted for splits, reverse splits, stock dividends, recapitalisations"
+  preferred: "LITE Series A Convertible Preferred (held by NVIDIA, 2,876,415 sh) -> as-converted common x 4.5 MRVL, or elect MRVL Series B Preferred (s3.1(a)(ii))"
+
+dates:
+  agreement_signed: 2026-11-01
+  announced: 2026-11-02        # pre-market press release; first trading session with terms public = 2026-11-02
+  speculation_start: 2026-10-29 # press release: Oct-28 was "the last trading day before market speculation"
+  unaffected_date: 2026-10-28
+  expected_close_text: "first half of calendar year 2028"
+  expected_close: 2028-03-31   # assumption: midpoint of 1H-2028 (configurable)
+  outside_date: 2027-11-01     # s8.1(b)(i), 11:59 p.m. Pacific
+  outside_date_extensions:     # automatic if only regulatory conditions remain unsatisfied
+    - 2028-02-01
+    - 2028-05-01
+    - 2028-08-01
+  final_outside_date: 2028-08-01
+
+unaffected_prices:             # closes on 2026-10-28 (Yahoo = Cboe, verified); implied premium 23.9% matches the release
+  target: 913.95
+  acquirer: 251.65
+
+termination_fees_usd:
+  target_fee: 2.9e9            # Lumentum -> Marvell (board recommendation change, superior proposal, tail)
+  acquirer_fee: 5.8e9          # Marvell -> Lumentum (board recommendation change, Parent superior proposal, tail)
+  regulatory_reverse_fee: 3.2e9  # Marvell -> Lumentum if terminated at outside date / regulatory restraint with only regulatory conditions open (s8.2(d))
+
+approvals:
+  target_vote: "majority of the voting power of the OUTSTANDING LITE common + Series A preferred (as-converted), single class (s4.1(s))"
+  acquirer_vote: "share issuance: majority of voting power present and entitled to vote; charter amendment (authorised shares 1.25bn -> higher): majority of VOTES CAST (s4.2(r), Article II)"
+  regulatory: "HSR waiting period + approvals listed in s7.1(c) of the Parent Disclosure Letter (confidential; jurisdictions not public)"
+  efforts: "reasonable best efforts; Marvell must accept Remedial Actions (divestitures, behavioural/supply commitments) unless material to the combined company or not conditioned on closing ('Burdensome Condition', s6.3(d))"
+  no_vote_fee: "no termination fee is described for a plain failed stockholder vote (fees attach to recommendation changes / superior proposals / regulatory failure)"
+
+dividends:
+  acquirer:
+    amount: 0.06               # USD per MRVL share per quarter (Yahoo dividend history 2025-2026)
+    frequency_per_year: 4
+    last_ex_dates: [2026-01-09, 2026-04-10, 2026-07-10, 2026-10-09]
+    allowed: "regular quarterly cash dividends consistent with past practice (s5.1(b)(i)); no splits (s5.1(b)(i)(B))"
+  target:
+    amount: 0.0
+    allowed: false             # s5.1(a)(i): LITE may not declare or pay dividends
+
+shares:
+  target_common: 93459271            # record date 2026-09-24 (LITE 8-K Item 5.07, filed 2026-11-23)
+  target_series_a_preferred: 2876415 # converts 1:1 into LITE common (LITE 8-K 2026-03-02)
+  acquirer_common: 877987882         # as of 2026-10-30 (merger agreement s4.2(b))
+  acquirer_series_a_preferred: 2000000  # each convertible into ~10.889 MRVL common (merger agreement s4.2(b))
+
+sources:
+  merger_agreement: "https://www.sec.gov/Archives/edgar/data/1835632/000119312526442717/d352474dex21.htm"
+  marvell_8k_item_1_01: "https://www.sec.gov/Archives/edgar/data/1835632/000119312526442717/d352474d8k.htm"
+  press_release: "https://www.sec.gov/Archives/edgar/data/1835632/000119312526442714/d81187dex991.htm"
+  lumentum_8k_merger: "https://www.sec.gov/Archives/edgar/data/1633978/000119312526442758/d163169d8k.htm"
+  lumentum_8k_annual_meeting: "https://www.sec.gov/Archives/edgar/data/1633978/000162828026075535/lite-20261118.htm"
+  marvell_8k_new_directors: "https://www.sec.gov/Archives/edgar/data/1835632/000183563226000026/mrvl-20261111.htm"

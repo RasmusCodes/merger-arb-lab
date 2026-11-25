@@ -1,0 +1,98 @@
+{
+ "LITE": {
+  "last": 640.42,
+  "prev_close": 651.33,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "MRVL": {
+  "last": 165.03,
+  "prev_close": 165.09,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "SMH": {
+  "last": 135.58,
+  "prev_close": 131.32,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "COHR": {
+  "last": 35.97,
+  "prev_close": 35.89,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "AAOI": {
+  "last": 75.67,
+  "prev_close": 72.26,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "FN": {
+  "last": 225.28,
+  "prev_close": 221.86,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "CIEN": {
+  "last": 76.93,
+  "prev_close": 74.54,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "CRDO": {
+  "last": 19.6,
+  "prev_close": 19.19,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "SOXX": {
+  "last": 63.09,
+  "prev_close": 64.29,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "NVDA": {
+  "last": 28.07,
+  "prev_close": 26.95,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "AVGO": {
+  "last": 105.81,
+  "prev_close": 104.73,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ },
+ "QQQ": {
+  "last": 397.6,
+  "prev_close": 391.74,
+  "time_utc": "2026-11-24T21:00:00+00:00",
+  "source": "SYNTHETIC SAMPLE (not market data)",
+  "market_state": "POSTPOST",
+  "delay_minutes": 0
+ }
+}
