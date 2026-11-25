@@ -132,7 +132,7 @@ def ev_vs_probability(ev: pd.DataFrame, p_market: float, p_bottom_up: float, hur
     ax.axhline(0, color=AXIS, linewidth=1.0)
     ax.axhline(hurdle, color=MUTED, linewidth=0.8)
     ax.text(0.665, hurdle, f"{hurdle:.0%} hurdle ", color=INK2, fontsize=8, va="bottom", ha="right")
-    for p, lab in ((p_market, "arb desks ~50% (Bloomberg)"), (p_bottom_up, "bottom-up base 63%")):
+    for p, lab in ((p_market, "arb desks ~50% (Bloomberg)"), (p_bottom_up, f"bottom-up base {p_bottom_up:.0%}")):
         ax.axvline(p, color=AXIS, linewidth=0.9)
         ax.text(p, ax.get_ylim()[0], f" {lab}", rotation=90, color=INK2, fontsize=7.8, va="bottom")
     _pct(ax)

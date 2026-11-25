@@ -112,11 +112,15 @@ DEFAULT_BOTTOM_UP = BottomUp((
         "price and below factor-model standalone estimates; CEO says shareholders are 'not happy'. Votes expected "
         "after the S-4 is effective (mid-2027, assumption)."),
     ProbabilityComponent(
-        "Required regulatory approvals (HSR, China SAMR, others) before the final outside date", 0.65, 0.80, 0.90,
-        "Commentators (Breakingviews, Bloomberg Intelligence) name SAMR as the key risk. SAMR cleared Marvell-Cavium, "
-        "Marvell-Inphi, AMD-Xilinx, II-VI-Coherent and Lumentum-NeoPhotonics (several with long delays/conditions), "
-        "but let Qualcomm-NXP, Applied-Kokusai and Intel-Tower lapse. Remedies are capped at 'material to the "
-        "combined company' (Burdensome Condition), so Marvell can walk from heavy remedies (paying USD 3.2bn)."),
+        "Required regulatory approvals (HSR, China SAMR, others) before the final outside date", 0.46, 0.61, 0.74,
+        "Gate by gate (analytics/antitrust.py RegTree): US 0.93 (second request likely; a lawsuit ~11%, parties win "
+        "~40% in court), EU 0.94, China SAMR 0.69 = the 2016-2025 base rate for notable US chip/tech deals (8 of 12 "
+        "decided cases approved, the big chip deals with behavioural conditions; all 4 failures were timeouts in "
+        "high-tension periods). The combined firm would be the dominant merchant PAM4 DSP supplier (Accelink prospectus: "
+        "Broadcom + Marvell ~90% of module DSPs, Marvell 60-70% of 50-100G/lane) AND a module/laser rival of its "
+        "Chinese DSP customers - the vertical-foreclosure profile SAMR conditioned in Nvidia-Mellanox and AMD-Xilinx. "
+        "Nov-2026 climate tilts negative (new US chip controls 16 Nov, tariff plans, truce only to 10 Jan 2027). "
+        "Remedies are capped at 'material to the combined company', so Marvell can walk from heavy remedies."),
     ProbabilityComponent(
         "No other termination (MAE, superior proposal, renegotiation failure, litigation)", 0.93, 0.97, 0.99,
         "Standard MAE carve-outs exclude industry-wide and stock-price changes; reciprocal no-shops and large fees."),

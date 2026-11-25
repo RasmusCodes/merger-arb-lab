@@ -17,7 +17,19 @@ pd.set_option("display.width", 220)
 pd.set_option("display.max_columns", 30)
 pd.set_option("display.max_colwidth", 70)
 
-res = run(inp=Inputs(mc_paths=int(sys.argv[1]) if len(sys.argv) > 1 else 20000))
+import argparse  # noqa: E402
+
+_ap = argparse.ArgumentParser(description="full MRVL-LITE analysis run")
+_ap.add_argument("mc_paths", nargs="?", type=int, default=20000)
+_ap.add_argument("--borrow-fee", type=float, default=None, help="annual MRVL borrow fee as a decimal, e.g. 0.0032")
+_ap.add_argument("--shortable-shares", type=float, default=None)
+_args = _ap.parse_args()
+_kw = {"mc_paths": _args.mc_paths}
+if _args.borrow_fee is not None:
+    _kw["borrow_fee"] = _args.borrow_fee
+if _args.shortable_shares is not None:
+    _kw["shortable_shares"] = _args.shortable_shares
+res = run(inp=Inputs(**_kw))
 d = res["deal"]
 print(f"as of {res['as_of'].date()}  {d.target.ticker} {res['L0']:.2f}  {d.acquirer.ticker} {res['M0']:.2f}")
 for s, (q, a) in res["quotes"].items():

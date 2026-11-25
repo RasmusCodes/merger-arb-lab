@@ -35,7 +35,7 @@ class Inputs:
     shortable_shares: float | None = 10_000_000
     p_acq_vote_fail: float = 0.10
     p_tgt_vote_fail: float = 0.10
-    p_reg_fail: float = 0.20
+    p_reg_fail: float = 0.39                 # = 1 - US 0.93 x EU 0.94 x SAMR 0.69 (antitrust.RegTree base)
     p_other_fail: float = 0.03
     rebound_kappa: float = 0.5
     stress_standalone_method: str = "worst optical peer"

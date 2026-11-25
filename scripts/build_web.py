@@ -58,6 +58,16 @@ snap = {
                          "calendar_days", "validation"]].to_dict(orient="records"),
     "borrow_fee": res["inputs"].borrow_fee,
 }
+# antitrust: gate probabilities and headline impacts (base tree, market q 50%, half / full MRVL reversal)
+from mergerarb.analytics import antitrust as at  # noqa: E402
+
+_tree = at.RegTree()
+snap["antitrust"] = {
+    "gates": _tree.gates().to_dict("records"),
+    "impact_half": at.news_impact(_tree, L0, M0, R, 0.135, market_q=0.5).fillna(-1).to_dict("records"),
+    "impact_full": at.news_impact(_tree, L0, M0, R, 0.27, market_q=0.5).fillna(-1).to_dict("records"),
+    "gap_at_q50": at.from_q_and_rebound(L0, M0, R, 0.5, 0.135).gap,
+}
 (OUT / "snapshot.json").write_text(json.dumps(snap, indent=1, default=str), encoding="utf-8")
 
 # ---------------- parity vectors: the browser engine must reproduce these

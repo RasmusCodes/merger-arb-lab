@@ -30,6 +30,7 @@ from .broker import IBKRBroker, SimBroker
 from .config import ExecutionConfig
 from .executor import PairExecutor, PreflightReport
 from .orders import build_pair_plan, plan_from_dict
+from .trigger import Rung, evaluate_rung
 
 TOKEN_FILE = pathlib.Path.home() / ".mergerarb" / "service_token"
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "[::1]"}
@@ -40,6 +41,28 @@ class Service:
         self.ex = executor
         self.deal = load_deal(deal_id)
         self.reports: dict[str, tuple[float, PreflightReport]] = {}
+        self.rungs: list[Rung] = []
+        self.hits_logged: set[tuple[str, float]] = set()
+
+    def check_triggers(self) -> list[dict]:
+        """Evaluate armed rungs on broker quotes; journal each rung's first hit per day. Never sends orders."""
+        if not self.rungs or not self.ex.broker.is_connected():
+            return []
+        T, A = self.deal.target.ticker, self.deal.acquirer.ticker
+        qt, qa = self.ex.broker.quote(T), self.ex.broker.quote(A)
+        live = qt.data_type == "live" and qa.data_type == "live"
+        out = []
+        for r in self.rungs:
+            s = evaluate_rung(r, qt.bid, qt.ask, qa.bid, qa.ask, self.deal.exchange_ratio, self.deal.cash_per_share,
+                              quotes_live=live)
+            key = (s.checked_utc[:10], r.target_gross_spread)
+            if s.hit and key not in self.hits_logged:
+                self.hits_logged.add(key)
+                self.ex.journal.write("trigger_hit", rung=r.target_gross_spread, lots=r.lots,
+                                      executable_spread=s.executable_spread, target_limit=s.target_limit,
+                                      acquirer_limit=s.acquirer_limit)
+            out.append({**dataclasses.asdict(s), "rung": dataclasses.asdict(r), "data_types": [qt.data_type, qa.data_type]})
+        return out
 
     def status(self) -> dict:
         st = self.ex.state
@@ -79,6 +102,12 @@ class Service:
             appr = ex.approve(plan, rep, body.get("typed", ""), body.get("override_reason"))
             st = ex.submit(plan, appr)
             return {"execution": st.summary()}
+        if method == "POST" and path == "/triggers":
+            self.rungs = [Rung(float(r["target_gross_spread"]), int(r["lots"])) for r in body.get("rungs", [])]
+            ex.journal.write("triggers_armed", rungs=[dataclasses.asdict(r) for r in self.rungs])
+            return {"armed": [dataclasses.asdict(r) for r in self.rungs]}
+        if method == "GET" and path == "/triggers":
+            return {"armed": [dataclasses.asdict(r) for r in self.rungs], "status": self.check_triggers()}
         if method == "POST" and path == "/pump":
             return {"execution": ex.pump().summary()}
         if method == "POST" and path == "/cancel":
@@ -176,6 +205,7 @@ def main(argv=None) -> None:
     httpd.timeout = 0.5
     print(f"merger-arb execution service on http://127.0.0.1:{a.port} ({'SIMULATOR' if a.sim else 'IBKR ' + cfg.mode})")
     print(f"token written to {tf} (never commit or share it)")
+    last_trigger = 0.0
     try:
         while True:
             httpd.handle_request()
@@ -184,6 +214,12 @@ def main(argv=None) -> None:
                     svc.ex.pump()
                 except Exception as exc:  # keep serving; the journal has the details
                     svc.ex.journal.write("pump_error", error=str(exc))
+            if svc.rungs and time.time() - last_trigger > 5:
+                last_trigger = time.time()
+                try:
+                    svc.check_triggers()
+                except Exception as exc:
+                    svc.ex.journal.write("trigger_error", error=str(exc))
     except KeyboardInterrupt:
         print("stopping")
 

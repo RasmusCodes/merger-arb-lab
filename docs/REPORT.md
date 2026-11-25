@@ -4,26 +4,29 @@
 `python scripts/build_report_assets.py` (deterministic seeds); the machine-written values are in
 [`report_numbers.json`](report_numbers.json). Research only, not investment advice.
 
-## Verdict: unattractive at today's spread, so WATCH (no trade)
+## Verdict: unattractive at today's spread, so NO TRADE
+
+*Revised 2026-11-25.* The first version said WATCH at 63% completion odds. A gate-by-gate antitrust analysis
+([ANTITRUST_AND_TRADING.md](ANTITRUST_AND_TRADING.md)) lowered completion to **48%**, which is the market's own ~50%.
 
 The 21.5% gross spread is real. It is not a data error, a wrong ratio or a stale quote. It is wide because the market
-gives the deal roughly even odds over a long, politically exposed timetable. If it closes, a hedged position earns about
-**$101 per LITE share** (about 15% a year). If it breaks, the hedge turns into a LITE/MRVL pair trade whose outcome
-depends almost entirely on where LITE would trade on its own. That is the one input nobody can pin down: our estimates
-run from **$427 to $613**.
+gives the deal roughly even odds over a long, politically exposed timetable, with China's SAMR the main risk. If it
+closes, a hedged position earns about **$101 per LITE share** (about 15% a year). If it breaks, the hedge turns into a
+LITE/MRVL pair trade whose outcome depends almost entirely on where LITE would trade on its own. That is the one input
+nobody can pin down: our estimates run from **$427 to $613**.
 
 | | Value |
 |---|---|
-| Base case (63% completion, blended break price) | expected return of about **5.7% a year** on Reg T capital, only **+1.1% a year above Treasuries** (4.6%) |
+| Base case (48% completion, blended break price) | expected return of about **2.5% a year** on Reg T capital, **2.1% a year below Treasuries** (4.6%) |
 | Stress case (LITE trades like the worst-hit optical peer, MRVL fully rebounds) | expected loss; break-even completion probability **69%** |
-| Spread needed to clear a 5% excess-return hurdle at base assumptions | **28.7% gross** (today 21.5%) |
+| Spread needed to clear a 5% excess-return hurdle at base assumptions | **35% gross** (today 21.5%) |
 | Position cap for a $10k account if traded anyway | **1 lot = 2 LITE long / 9 MRVL short** (Monte Carlo tail-risk cap); 2 lots at most (loss budget) |
-| What would change the call | spread ≥ ~29%, or evidence that lifts completion odds to ~80% (S-4 approvals list, HSR clearance, both votes passed), or a well-founded view that standalone LITE is worth ≥ ~$600 |
+| What would change the call | a spread of ≥ 35% (the trigger ladder's first rung), or a well-founded view that standalone LITE is worth ≥ ~$600. At today's spread, even near-certain China approval only lifts completion to ~73%, below the ~81% that would clear 5% under the base break case. |
 
 Classification (from the brief's four options): **Unattractive: the spread adequately compensates for the risks.** It is
 not "Avoid": borrow is cheap and plentiful, and the trade can be executed and margined at small size. The automated
-signal (`mergerarb.analytics.signal`) gives **WATCH**: expected excess return below the 5% hurdle, and negative expected
-P&L under the stress break case.
+signal (`mergerarb.analytics.signal`) gives **NO TRADE**: the expected excess return is negative at 48%, and expected
+P&L is negative under the stress break case.
 
 ---
 
@@ -153,18 +156,18 @@ MRVL's discount reverses) or **$546** (if all of it does). Both sit between our 
 |---|---|---|---|---|
 | MRVL stockholders approve | 80% | 90% | 95% | low votes-cast bar; unanimous board; but a hostile reaction and dilution complaints |
 | LITE stockholders approve | 80% | 90% | 96% | majority of outstanding; offer below pre-talks price; unhappy holders |
-| Regulatory approvals before 2028-08-01 | 65% | 80% | 90% | SAMR is the swing factor; mixed precedent; remedies capped at "material" |
+| Regulatory approvals before 2028-08-01 | 46% | 61% | 74% | gate by gate: US 0.93 × EU 0.94 × China 0.69 (SAMR base rate for comparable US chip deals); see [ANTITRUST_AND_TRADING.md](ANTITRUST_AND_TRADING.md) |
 | No other termination | 93% | 97% | 99% | standard MAE carve-outs, reciprocal no-shops, large fees |
-| **P(complete)** | **39%** | **63%** | **81%** | product; assumes independence |
+| **P(complete)** | **27%** | **48%** | **67%** | product; assumes independence (the first version had 80% for regulation and 63% overall) |
 
 ### 3.4 Expected return
 
 ![Expected excess return](figures/ev_vs_probability.png)
 
-At the base probability (63%) with the base break case, the expected P&L is **$42.1 per LITE share**. That is 7.8% on
-Reg T capital ($540 per share) over 1.35 years, **5.7% a year, only 1.1 points above Treasuries**. At the arb desks'
-50% it is -1.6 points a year. The stress case is negative until about 80%. Only the optimistic case clears the 5% hurdle
-at today's odds.
+At the base probability (48%) with the base break case, the expected P&L is **$18.4 per LITE share**. That is 3.4% on
+Reg T capital ($540 per share) over 1.35 years, **2.5% a year, 2.1 points below Treasuries**. At the arb desks' 50% it
+is -1.6 points a year, and it only reaches the 5% hurdle at about 81%. The stress case is negative until about 80%.
+Only the optimistic break case (LITE worth ~$613 standalone) clears the hurdle at today's odds.
 
 ### 3.5 Scenarios (`analytics/scenarios.py`)
 Each scenario runs day by day through an IBKR-style margin account. Borrow accrues daily, dividends are paid on
@@ -202,32 +205,33 @@ projected ex-dates, and a maintenance breach liquidates the position. The table 
 
 ![Monte Carlo CDF](figures/mc_distribution.png)
 
-| 4 LITE / 18 MRVL, $10k | Base | Optimistic | Stress |
+| 4 LITE / 18 MRVL, $10k (48% completion) | Base | Optimistic | Stress |
 |---|---|---|---|
-| Mean P&L | **+$190 (+1.9%)** | +$331 | -$44 |
-| P(loss) | 20.0% | 16.6% | 26.0% |
-| 95% VaR / expected shortfall | $1,774 / **$3,304** | $1,461 / $2,902 | $2,442 / $4,162 |
-| P(margin liquidation) | 0.5% | 0.5% | 0.4% |
+| Mean P&L | **+$118 (+1.2%)** | +$311 | -$218 |
+| P(loss) | 27.5% | 23.1% | 35.6% |
+| 95% VaR / expected shortfall | $2,331 / **$3,992** | $2,040 / $3,639 | $3,094 / $4,969 |
+| P(margin liquidation) | 0.6% | 0.5% | 0.5% |
 
 **Main insight:** if the deal breaks, the hedge becomes a 1.2x long-LITE / short-MRVL pair whose two legs have about 75%
-relative volatility. The 5% tail therefore costs about a third of the account even at 0.43x gross. Changing LITE's
-standalone vol from 66% to 98% moves the expected shortfall only from $3,120 to $3,242, so the tail comes from the
+relative volatility. The 5% tail therefore costs about 40% of the account even at 0.43x gross. Changing LITE's
+standalone vol from 66% to 98% moves the expected shortfall only from $3,815 to $3,939, so the tail comes from the
 break-price level and MRVL's moves, not from the vol choice.
 
 ### 3.7 Hedge ratio: contract ratio vs dollar-neutral (same simulated paths, per LITE share)
 | Hedge (short MRVL per LITE) | Mean | Std | 95% shortfall | Mean if completed | Mean if broken |
 |---|---|---|---|---|---|
-| Contract ratio 4.50 | $46.1 | $346 | $878 | $100.9 | -$47.2 |
-| Dollar-neutral 3.70 | $51.8 | $326 | $721 | $100.4 | -$31.0 |
-| Variance-minimising 3.59 | $52.6 | $326 | $700 | $100.4 | -$28.7 |
-| Unhedged long LITE | $78.3 | $561 | $406* | $98.2 | +$44.4 |
+| Contract ratio 4.50 | $25.6 | $430 | $1,099 | $100.9 | -$42.9 |
+| Dollar-neutral 3.70 | $33.6 | $400 | $896 | $101.1 | -$27.8 |
+| Variance-minimising 3.18 | $38.8 | $394 | $771 | $101.2 | -$17.9 |
+| Unhedged long LITE | $70.4 | $569 | $407* | $101.7 | +$42.0 |
 
-\*The unhedged leg shows a smaller 95% shortfall but a 59% chance of loss, and it is pure LITE exposure.
+\*The unhedged leg shows a smaller 95% shortfall but a 60% chance of loss, and it is pure LITE exposure.
 
 The contract ratio is the only hedge that locks the completion payoff, so it stays the default for execution.
 **Dollar-neutral is not risk-neutral:** it leaves 0.8 MRVL shares of net long exposure per LITE share if the deal
-closes. But because MRVL is expected to rebound on a break, a slightly smaller short (about 3.6-3.7) lowers variance in
-this model. That result depends on the reversal assumption; under the stress model the variance-minimising ratio is 3.25.
+closes. But because MRVL is expected to rebound on a break, a smaller short (about 3.2-3.7) lowers variance in this
+model, and more so as break risk rises. That result depends on the reversal assumption. The antitrust analysis shows
+the same thing from another angle: bad regulatory news mostly lifts MRVL.
 
 ### 3.8 Position sizing and margin (`analytics/margin.py`)
 IBKR's published US stock requirements (read 2026-11-24): long 26.25% initial / 25% maintenance; short 31.5% / 30%;
@@ -268,13 +272,13 @@ a Monte Carlo cap (95% expected shortfall ≤ 20% of equity) gives **1 lot**.
 ## 5. Recommendation details
 | Item | Recommendation |
 |---|---|
-| Classification | **Unattractive** at a 21.5% spread (fairly priced); signal **WATCH** |
-| Entry spread | ≥ **~29% gross** at today's assumptions; otherwise only after milestones that lift completion odds toward 80% |
+| Classification | **Unattractive** at a 21.5% spread (fairly priced); signal **NO TRADE** (revised from WATCH, 2026-11-25) |
+| Entry spread | ≥ **~35% gross** at today's assumptions (trigger ladder rung; fires only on live executable quotes), or a well-founded view that LITE is worth ≥ ~$600 standalone |
 | Maximum MRVL borrow fee | re-evaluate above **1%**; hard stop above **3%** |
 | Maximum position ($10k) | **1 lot (2 LITE / 9 MRVL)**; 2 lots at most |
 | Minimum excess liquidity | **≥ 50% of equity** (≥ $5,000) |
 | Expected holding period | ~16 months to the base close (2028-03-31); up to 2028-08-01 |
-| Expected / downside return (2 lots) | completion +4.0% of equity; Monte Carlo mean +1.9% (base) / -0.4% (stress); 5% worst ≤ -18% (base) / -24% (stress) |
+| Expected / downside return (2 lots) | completion +4.0% of equity; Monte Carlo mean +1.2% (base) / -2.2% (stress); 5% worst ≤ -23% (base) / -31% (stress) |
 | Invalidation | MRVL board changes its recommendation; ratio renegotiated; organised vote opposition or negative proxy advice at either company; SAMR refuses or stops the clock; HSR second request with structural remedies; borrow > 3%; outside date passes without extension |
 
 **Events to monitor:** MRVL Q3 FY27 results (Dec 1, 2026); the S-4 filing (approvals list, merger background,

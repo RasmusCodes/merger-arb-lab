@@ -14,6 +14,8 @@ you type a written override reason, and it is meant for paper trading.
 | `journal.py` | Append-only JSONL log (`data/execution/journal.jsonl`, gitignored) of every preflight, approval, submit, status change, fill, cancel, alert and error. |
 | `service.py` | The only process that talks to TWS/Gateway: a single-threaded HTTP service on **127.0.0.1**, token-authenticated, which refuses non-local Host/Origin headers. |
 | `cli.py` | Writes the order spec (JSON + CSV) with no broker connection at all. |
+| `trigger.py` | Alert-only spread-trigger ladder. It uses the *executable* spread (sell MRVL at the bid, buy LITE at the ask) and fires only on live quotes. Each rung's first hit per day is journalled with pre-filled limits; there is no automatic order. Default: 35% for one lot, plus 40% from $20k of equity. |
+| `readiness.py` | `python -m mergerarb.execution.readiness`: a one-command check of the connection, paper vs live account, funds, data subscription, shortability, IBKR what-if margin for one lot, session and executable spread. It places no orders; exit code 1 means something blocks trading. |
 
 ## Safety model
 1. **Paper by default.** Live mode needs all three: `--mode live`, the environment variable `MERGERARB_ALLOW_LIVE=1`,

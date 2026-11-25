@@ -95,7 +95,8 @@ borrow = sb.number_input(f"{A} borrow fee (%/yr)", value=0.32, step=0.05) / 100
 sb.header("Completion probability")
 pa = sb.slider("MRVL vote passes", 0.5, 1.0, 0.90, 0.01)
 pt = sb.slider("LITE vote passes", 0.5, 1.0, 0.90, 0.01)
-prg = sb.slider("Regulatory approvals in time", 0.3, 1.0, 0.80, 0.01)
+prg = sb.slider("Regulatory approvals in time", 0.3, 1.0, 0.61, 0.01,
+                help="US 0.93 x EU 0.94 x China SAMR 0.69 (base); see the Antitrust tab")
 po = sb.slider("No other termination", 0.8, 1.0, 0.97, 0.01)
 p = pa * pt * prg * po
 sb.metric("P(complete)", f"{p:.0%}")
@@ -128,7 +129,8 @@ m = sig.metrics
 pos = mg.units_to_position(int(lots), ratio) if lots else mg.Position(0, 0)
 
 tabs = st.tabs(["Signal", "Spread", "Scenarios & P&L", "Probabilities", "Sizing & margin", "Monte Carlo",
-                "Hedge ratios"] + (["Execution (local)"] if os.environ.get("MERGERARB_ENABLE_EXECUTION") == "1" else []))
+                "Hedge ratios", "Antitrust"]
+               + (["Execution (local)"] if os.environ.get("MERGERARB_ENABLE_EXECUTION") == "1" else []))
 
 with tabs[0]:
     colour = {"TRADE": "green", "WATCH": "orange", "NO TRADE": "red"}[sig.decision]
@@ -285,8 +287,52 @@ with tabs[6]:
     else:
         st.info("Run the Monte Carlo tab first.")
 
-if len(tabs) > 7:
-    with tabs[7]:
+with tabs[7]:
+    from mergerarb.analytics import antitrust as at
+
+    st.subheader("How regulatory news moves LITE, MRVL and the spread")
+    st.caption("Two-state pricing: each stock is a mix of its deal / no-deal value weighted by the market's completion "
+               "odds q. A headline changes q (Bayesian update from the gate tree); the hedged trade's P&L is dq x G with "
+               "G = spread$ / (1 - q). See docs/ANTITRUST_AND_TRADING.md.")
+    a1, a2, a3 = st.columns(3)
+    g_us_sue = a1.slider("US: P(suit | second request)", 0.0, 0.5, 0.15, 0.01)
+    g_court = a1.slider("US: P(parties win in court)", 0.0, 1.0, 0.40, 0.05)
+    g_votes = a2.slider("Both votes pass", 0.5, 1.0, 0.81, 0.01)
+    g_eu2 = a2.slider("EU: P(phase 2)", 0.0, 1.0, 0.40, 0.05)
+    g_samr = a3.slider("China SAMR approves (if accepted on time)", 0.3, 1.0, 0.70, 0.01)
+    g_other = a3.slider("Other termination", 0.0, 0.2, 0.03, 0.01)
+    tree = at.RegTree(p_us_sue_after_sr=g_us_sue, p_us_clear_after_sr=max(0.0, 0.85 - g_us_sue + 0.15 - 0.35),
+                      p_court_win=g_court, p_votes_pass=g_votes, p_eu_phase1=1 - g_eu2, p_samr_approve=g_samr,
+                      p_other_break=g_other)
+    st.dataframe(tree.gates().style.format({"p_success": "{:.1%}"}), use_container_width=True)
+    b1, b2 = st.columns(2)
+    mq = b1.slider("Market's completion odds now (q)", 0.2, 0.9, 0.50, 0.01,
+                   help="Bloomberg reported arb desks near 50% (snippet)")
+    kap_a = b2.slider("Share of MRVL's deal discount that reverses on a break", 0.0, 1.0, 0.5, 0.05, key="kap_at")
+    jj = kap_a * delta / (1 - delta)
+    ni = at.news_impact(tree, L0, M0, ratio, jj, market_q=mq)
+    st.dataframe(ni[["headline", "p_event", "q_before", "market_q_after", "tgt_move", "acq_move", "spread_pts",
+                     "gross_spread_after", "arb_pnl_unit"]].style.format(
+        {"p_event": "{:.0%}", "q_before": "{:.1%}", "market_q_after": "{:.1%}", "tgt_move": "{:+.1%}",
+         "acq_move": "{:+.1%}", "spread_pts": "{:+.1%}", "gross_spread_after": "{:.1%}", "arb_pnl_unit": "${:+,.0f}"},
+        na_rep=""), use_container_width=True)
+    st0 = at.from_q_and_rebound(L0, M0, ratio, mq, jj)
+    st.write(f"Gap G = ${st0.gap:,.0f} per {T} share: every 10-point drop in q costs the hedged trade "
+             f"${0.1 * st0.gap:,.0f} per {T} share. Implied break values: {T} ${st0.S:,.0f}, {A} ${st0.M_B:,.0f}; "
+             f"{A} if the deal closes ${st0.M_C:,.0f}.")
+    if st.button("Simulate entry rules on news flow (5,000 paths)"):
+        mk = at.RegTree()
+        rr = at.news_mc(tree, mk, L0, M0, ratio, px.index[-1].date(), max(pos.target_shares, 2),
+                        at.NewsMCConfig(n_paths=5000, acq_break_move=jj), at.default_strategies(threshold=0.35))
+        st.write(f"Your P(complete) {rr['p_complete_you']:.1%} vs market tree {rr['p_complete_market']:.1%}")
+        st.dataframe(rr["table"].style.format({"p_trade": "{:.0%}", "mean_pnl_if_traded": "${:,.0f}",
+                                               "mean_pnl_all_paths": "${:,.0f}", "p_loss_if_traded": "{:.0%}",
+                                               "var95_if_traded": "${:,.0f}", "es95_if_traded": "${:,.0f}",
+                                               "mean_entry_spread": "{:.1%}", "mean_years_held": "{:.2f}",
+                                               "pnl_per_capital_year": "{:+.1%}"}), use_container_width=True)
+
+if len(tabs) > 8:
+    with tabs[8]:
         import requests
 
         st.warning("Local only. Orders go to TWS / IB Gateway through the local service, after pre-flight checks and "
@@ -318,6 +364,18 @@ if len(tabs) > 7:
                 st.write(s_)
                 if st.button("Connect to TWS / IB Gateway"):
                     st.write(call("POST", "/connect"))
+                st.markdown("**Spread-trigger ladder** (alerts only; fires on live executable quotes: sell MRVL at bid, "
+                            "buy LITE at ask)")
+                from mergerarb.execution.trigger import default_ladder
+                lad = default_ladder(equity)
+                t1, t2 = st.columns(2)
+                r_spread = t1.number_input("Rung: gross spread", value=float(lad[0].target_gross_spread), step=0.01,
+                                           format="%.2f")
+                r_lots = t2.number_input("Rung: lots", value=int(lad[0].lots), min_value=1, step=1)
+                if st.button("Arm trigger"):
+                    st.write(call("POST", "/triggers", {"rungs": [{"target_gross_spread": r_spread, "lots": r_lots}]}))
+                if st.button("Check triggers"):
+                    st.write(call("GET", "/triggers"))
                 if st.button("Run pre-flight"):
                     code, rep = call("POST", "/preflight", {"plan": plan.to_dict(), "borrow_fee": borrow,
                                                             "signal_decision": sig.decision})

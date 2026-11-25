@@ -56,7 +56,7 @@
    "break_pnl_unit": 43.86868621752846,
    "break_pnl_pct_of_L": 0.09005724712089108,
    "breakeven_p": 0.0,
-   "ev_unit_at_base_p": 79.80286231087382
+   "ev_unit_at_base_p": 71.26849548870429
   },
   {
    "case": "factor-model standalone, full reversal",
@@ -66,7 +66,7 @@
    "break_pnl_unit": -36.007089390659516,
    "break_pnl_pct_of_L": -0.07391831456450057,
    "breakeven_p": 0.2627395091808439,
-   "ev_unit_at_base_p": 50.13380421896848
+   "ev_unit_at_base_p": 29.67534198668181
   },
   {
    "case": "base: blended standalone (geometric midpoint), half reversal",
@@ -76,7 +76,7 @@
    "break_pnl_unit": -57.57574320657439,
    "break_pnl_pct_of_L": -0.11819622106785677,
    "breakeven_p": 0.3629940188941483,
-   "ev_unit_at_base_p": 42.12234344558506
+   "ev_unit_at_base_p": 18.444047865697172
   },
   {
    "case": "blended standalone, full reversal",
@@ -86,7 +86,7 @@
    "break_pnl_unit": -137.45151881476238,
    "break_pnl_pct_of_L": -0.28217178275324845,
    "breakeven_p": 0.5763426138706449,
-   "ev_unit_at_base_p": 12.453285353679725
+   "ev_unit_at_base_p": -23.149105636325302
   },
   {
    "case": "AAOI-like standalone, half reversal",
@@ -96,7 +96,7 @@
    "break_pnl_unit": -142.23093396872983,
    "break_pnl_pct_of_L": -0.2919833592723145,
    "breakeven_p": 0.5846660636430925,
-   "ev_unit_at_base_p": 10.678019388890057
+   "ev_unit_at_base_p": -25.637857033544705
   },
   {
    "case": "stress: AAOI-like standalone, full MRVL reversal",
@@ -106,7 +106,7 @@
    "break_pnl_unit": -222.1067095769178,
    "break_pnl_pct_of_L": -0.4559589209577061,
    "breakeven_p": 0.6873295042721642,
-   "ev_unit_at_base_p": -18.991038703015278
+   "ev_unit_at_base_p": -67.23101053556718
   },
   {
    "case": "literal unaffected prices (LITE 913.95, MRVL 251.65)",
@@ -116,7 +116,7 @@
    "break_pnl_unit": -115.61603988501024,
    "break_pnl_pct_of_L": -0.23734611571072886,
    "breakeven_p": 0.5336442486318025,
-   "ev_unit_at_base_p": 20.563855647346855
+   "ev_unit_at_base_p": -11.77886954158798
   },
   {
    "case": "regulatory failure: stress standalone + after-tax fee, full reversal",
@@ -126,7 +126,7 @@
    "break_pnl_unit": -195.86513591957134,
    "break_pnl_pct_of_L": -0.40208806027174276,
    "breakeven_p": 0.6596943188262326,
-   "ev_unit_at_base_p": -9.243868583730517
+   "ev_unit_at_base_p": -53.566419575992754
   }
  ],
  "market_implied_standalone": {
@@ -154,10 +154,10 @@
   },
   {
    "component": "Required regulatory approvals (HSR, China SAMR, others) before the final outside date",
-   "low": 0.65,
-   "base": 0.8,
-   "high": 0.9,
-   "rationale": "Commentators (Breakingviews, Bloomberg Intelligence) name SAMR as the key risk. SAMR cleared Marvell-Cavium, Marvell-Inphi, AMD-Xilinx, II-VI-Coherent and Lumentum-NeoPhotonics (several with long delays/conditions), but let Qualcomm-NXP, Applied-Kokusai and Intel-Tower lapse. Remedies are capped at 'material to the combined company' (Burdensome Condition), so Marvell can walk from heavy remedies (paying USD 3.2bn)."
+   "low": 0.46,
+   "base": 0.61,
+   "high": 0.74,
+   "rationale": "Gate by gate (analytics/antitrust.py RegTree): US 0.93 (second request likely; a lawsuit ~11%, parties win ~40% in court), EU 0.94, China SAMR 0.69 = the 2016-2025 base rate for notable US chip/tech deals (8 of 12 decided cases approved, the big chip deals with behavioural conditions; all 4 failures were timeouts in high-tension periods). The combined firm would be the dominant merchant PAM4 DSP supplier (Accelink prospectus: Broadcom + Marvell ~90% of module DSPs, Marvell 60-70% of 50-100G/lane) AND a module/laser rival of its Chinese DSP customers - the vertical-foreclosure profile SAMR conditioned in Nvidia-Mellanox and AMD-Xilinx. Nov-2026 climate tilts negative (new US chip controls 16 Nov, tariff plans, truce only to 10 Jan 2027). Remedies are capped at 'material to the combined company', so Marvell can walk from heavy remedies."
   },
   {
    "component": "No other termination (MAE, superior proposal, renegotiation failure, litigation)",
@@ -168,9 +168,9 @@
   },
   {
    "component": "P(complete) = product",
-   "low": 0.3868800000000001,
-   "base": 0.6285600000000001,
-   "high": 0.812592,
+   "low": 0.27379200000000004,
+   "base": 0.479277,
+   "high": 0.6681311999999999,
    "rationale": "assumes independence (sequential conditions)"
   }
  ],
@@ -528,7 +528,7 @@
   "units": 2,
   "binding": "loss budget (worst plausible stress)",
   "recommended_units": 1,
-  "es95_per_unit": 1651.7747341760346,
+  "es95_per_unit": 1996.0544766233843,
   "liquidation_moves": {
    "acquirer_up_target_flat": 2.8590942132782984,
    "target_down_acquirer_flat": null,
@@ -1252,29 +1252,29 @@
  ],
  "mc": {
   "n_paths": 20000,
-  "p_complete_input": 0.6285600000000001,
-  "mean_pnl": 189.86469280795973,
-  "median_pnl": 403.6852297724406,
-  "std_pnl": 1290.4582596073265,
-  "p_loss": 0.20045,
-  "var95": 1774.309128055774,
-  "es95": 3303.549468352069,
-  "p_liquidation": 0.0049,
-  "mean_roe": 0.018986469280795972,
-  "mean_years": 1.195400595238095,
-  "mean_annualized_roe": 0.013741438429201832,
-  "roe_per_year_of_expected": 0.01588293443756762,
-  "median_max_drawdown": 0.04346660326371478,
-  "p95_max_drawdown": 0.21272777955488592
+  "p_complete_input": 0.479277,
+  "mean_pnl": 117.80191857358324,
+  "median_pnl": 402.47659238749986,
+  "std_pnl": 1597.313125672838,
+  "p_loss": 0.2746,
+  "var95": 2331.127713346577,
+  "es95": 3992.1089532467686,
+  "p_liquidation": 0.0057,
+  "mean_roe": 0.011780191857358326,
+  "mean_years": 1.1833841269841268,
+  "mean_annualized_roe": 0.005940615311951035,
+  "roe_per_year_of_expected": 0.009954664414318562,
+  "median_max_drawdown": 0.048428604225463495,
+  "p95_max_drawdown": 0.2630521163269197
  },
  "mc_by_outcome": [
   {
    "outcome": "complete",
-   "share": 0.6271,
-   "mean_pnl": 403.85177679151235,
-   "p5_pnl": 393.420451964965,
-   "p95_pnl": 409.9898059764739,
-   "mean_years": 1.3694358384399845
+   "share": 0.4743,
+   "mean_pnl": 403.8130625417763,
+   "p5_pnl": 393.22784983277717,
+   "p95_pnl": 409.9573431836194,
+   "mean_years": 1.3706180202068878
   },
   {
    "outcome": "vote failure",
@@ -1286,71 +1286,71 @@
   },
   {
    "outcome": "regulatory failure",
-   "share": 0.1587,
-   "mean_pnl": -117.5056905598639,
-   "p5_pnl": -3768.0284055332804,
-   "p95_pnl": 3235.313540197344,
-   "mean_years": 1.2623973554975445
+   "share": 0.3155,
+   "mean_pnl": -79.64407327998521,
+   "p5_pnl": -3690.85093744743,
+   "p95_pnl": 3104.3140922185867,
+   "mean_years": 1.2657063617840163
   },
   {
    "outcome": "other failure",
-   "share": 0.01995,
-   "mean_pnl": -170.50242908073528,
-   "p5_pnl": -2960.02398883764,
-   "p95_pnl": 1936.8578594599649,
-   "mean_years": 0.6942156979750965
+   "share": 0.01515,
+   "mean_pnl": -145.59299387871843,
+   "p5_pnl": -2948.576305626016,
+   "p95_pnl": 2039.9394830768283,
+   "mean_years": 0.7032060348892032
   },
   {
    "outcome": "liquidated",
-   "share": 0.0049,
-   "mean_pnl": -2303.111604399261,
-   "p5_pnl": -5060.855370151494,
-   "p95_pnl": 292.7016117866905,
-   "mean_years": 1.0842241658568188
+   "share": 0.0057,
+   "mean_pnl": -2866.2008786759775,
+   "p5_pnl": -5345.644279891414,
+   "p95_pnl": 290.7324038596328,
+   "mean_years": 1.0865705931495404
   }
  ],
  "mc_optimistic": {
   "n_paths": 20000,
-  "p_complete_input": 0.6285600000000001,
-  "mean_pnl": 330.88658230633837,
-  "median_pnl": 404.4659553072986,
-  "std_pnl": 1324.7287915221405,
-  "p_loss": 0.16595,
-  "var95": 1461.2408000196372,
-  "es95": 2902.464213136744,
-  "p_liquidation": 0.00455,
-  "mean_roe": 0.03308865823063384,
-  "mean_years": 1.19513373015873,
-  "mean_annualized_roe": 0.03600431490759744,
-  "roe_per_year_of_expected": 0.027686155444913447,
-  "median_max_drawdown": 0.04253123506022733,
-  "p95_max_drawdown": 0.19343066015522234
+  "p_complete_input": 0.479277,
+  "mean_pnl": 311.44001524569813,
+  "median_pnl": 403.97763594651633,
+  "std_pnl": 1699.8833522347359,
+  "p_loss": 0.23055,
+  "var95": 2039.9161913236912,
+  "es95": 3639.466142542867,
+  "p_liquidation": 0.0051,
+  "mean_roe": 0.03114400152456981,
+  "mean_years": 1.1814696428571427,
+  "mean_annualized_roe": 0.032620311076192975,
+  "roe_per_year_of_expected": 0.026360390817367435,
+  "median_max_drawdown": 0.04696189207219918,
+  "p95_max_drawdown": 0.2455909443004652
  },
  "mc_stress": {
   "n_paths": 20000,
-  "p_complete_input": 0.6285600000000001,
-  "mean_pnl": -43.693048025258214,
-  "median_pnl": 402.51276401036984,
-  "std_pnl": 1343.1088625594193,
-  "p_loss": 0.2596,
-  "var95": 2441.8232918881063,
-  "es95": 4161.91413166402,
-  "p_liquidation": 0.004,
-  "mean_roe": -0.004369304802525822,
-  "mean_years": 1.1989960317460315,
-  "mean_annualized_roe": -0.019356786885339372,
-  "roe_per_year_of_expected": -0.0036441361662915973,
-  "median_max_drawdown": 0.04560885302642566,
-  "p95_max_drawdown": 0.26375841509363823
+  "p_complete_input": 0.479277,
+  "mean_pnl": -218.35986988045852,
+  "median_pnl": 399.2264039917259,
+  "std_pnl": 1618.5173301973712,
+  "p_loss": 0.35575,
+  "var95": 3093.9412392582312,
+  "es95": 4969.330203756441,
+  "p_liquidation": 0.00505,
+  "mean_roe": -0.02183598698804585,
+  "mean_years": 1.1848095238095238,
+  "mean_annualized_roe": -0.0335650482381458,
+  "roe_per_year_of_expected": -0.018429955658894857,
+  "median_max_drawdown": 0.053165618336926845,
+  "p95_max_drawdown": 0.3273049015647994
  },
  "mc_stress_by_outcome": [
   {
    "outcome": "complete",
-   "share": 0.62735,
-   "mean_pnl": 403.79251726901435,
-   "p5_pnl": 393.20007945651463,
-   "p95_pnl": 410.01827311419913,
-   "mean_years": 1.3725060439414467
+   "share": 0.4766,
+   "mean_pnl": 403.78641615633654,
+   "p5_pnl": 393.32770668520834,
+   "p95_pnl": 410.0135345882548,
+   "mean_years": 1.3734962931878585
   },
   {
    "outcome": "vote failure",
@@ -1362,154 +1362,154 @@
   },
   {
    "outcome": "regulatory failure",
-   "share": 0.1614,
-   "mean_pnl": -674.8266670281487,
-   "p5_pnl": -4498.136705547593,
-   "p95_pnl": 2005.5380227065864,
-   "mean_years": 1.2592826163922817
+   "share": 0.3159,
+   "mean_pnl": -706.9588254105006,
+   "p5_pnl": -4604.068214812157,
+   "p95_pnl": 2028.3354987384573,
+   "mean_years": 1.2597994141204016
   },
   {
    "outcome": "other failure",
-   "share": 0.02075,
-   "mean_pnl": -954.8068565039026,
-   "p5_pnl": -3566.994078676567,
-   "p95_pnl": 1022.0484622671507,
-   "mean_years": 0.7172212660164466
+   "share": 0.01595,
+   "mean_pnl": -863.6347616124857,
+   "p5_pnl": -3468.567760995809,
+   "p95_pnl": 1110.6835396692543,
+   "mean_years": 0.7074438970990694
   },
   {
    "outcome": "liquidated",
-   "share": 0.004,
-   "mean_pnl": -2050.286850886982,
-   "p5_pnl": -4743.010757103102,
-   "p95_pnl": 293.6085082647627,
-   "mean_years": 1.059424603174603
+   "share": 0.00505,
+   "mean_pnl": -2696.898698226747,
+   "p5_pnl": -5114.775253479883,
+   "p95_pnl": 288.0769584506889,
+   "mean_years": 1.0615275813295617
   }
  ],
  "mc_vol_sensitivity": [
   {
    "standalone_vol": "5y realised",
    "vol": 0.6547431407169662,
-   "mean_pnl": 204.35797605977737,
-   "p_loss": 0.1791,
-   "var95": 1658.9627909457263,
-   "es95": 3119.934139929927,
-   "p_liquidation": 0.0053
+   "mean_pnl": 136.12548428305084,
+   "p_loss": 0.2448,
+   "var95": 2199.989516308245,
+   "es95": 3814.762813722465,
+   "p_liquidation": 0.0062
   },
   {
    "standalone_vol": "2y realised (base)",
    "vol": 0.846615832252667,
-   "mean_pnl": 206.99471861625756,
-   "p_loss": 0.197,
-   "var95": 1736.0478930383033,
-   "es95": 3168.852144105894,
-   "p_liquidation": 0.0053
+   "mean_pnl": 135.4434117295702,
+   "p_loss": 0.2713,
+   "var95": 2291.079929215765,
+   "es95": 3859.7217394641348,
+   "p_liquidation": 0.0062
   },
   {
    "standalone_vol": "1y realised",
    "vol": 0.9848081593543057,
-   "mean_pnl": 209.48719907486537,
-   "p_loss": 0.2118,
-   "var95": 1821.1784634027006,
-   "es95": 3242.088141880223,
-   "p_liquidation": 0.0053
+   "mean_pnl": 135.8946063504015,
+   "p_loss": 0.2937,
+   "var95": 2386.74565217229,
+   "es95": 3938.8534837056227,
+   "p_liquidation": 0.0062
   }
  ],
  "hedges": [
   {
    "hedge": "ratio-neutral (contract)",
    "short_per_long": 4.5,
-   "mean": 46.10315067867956,
-   "std": 346.0465013900617,
-   "p_loss": 0.1985,
-   "p5": -436.0461742442112,
-   "es95": 877.7595454284677,
-   "mean_if_complete": 100.92772051676207,
-   "mean_if_break": -47.18674615372966
+   "mean": 25.631831816981794,
+   "std": 429.8696334469901,
+   "p_loss": 0.27305,
+   "p5": -580.4579933836422,
+   "es95": 1098.857318208693,
+   "mean_if_complete": 100.91732444958366,
+   "mean_if_break": -42.85330981490955
   },
   {
    "hedge": "dollar-neutral",
    "short_per_long": 3.70236376073573,
-   "mean": 51.81062635514592,
-   "std": 326.3129841042355,
-   "p_loss": 0.2151,
-   "p5": -378.71460800733803,
-   "es95": 721.0628636524639,
-   "mean_if_complete": 100.44471436062165,
-   "mean_if_break": -30.945500431964412
+   "mean": 33.57420502113732,
+   "std": 400.135119799764,
+   "p_loss": 0.30045,
+   "p5": -491.82907594219665,
+   "es95": 896.1784778669985,
+   "mean_if_complete": 101.06280968636472,
+   "mean_if_break": -27.81832211011654
   },
   {
    "hedge": "variance-minimising",
-   "short_per_long": 3.5926031651268153,
-   "mean": 52.59601686128713,
-   "std": 325.9868232645483,
-   "p_loss": 0.2321,
-   "p5": -371.3092847792651,
-   "es95": 700.4589114651836,
-   "mean_if_complete": 100.37824917164069,
-   "mean_if_break": -28.71058592319537
+   "short_per_long": 3.177717090841064,
+   "mean": 38.79831527027087,
+   "std": 394.26190889576964,
+   "p_loss": 0.43815,
+   "p5": -436.690037414886,
+   "es95": 770.9148689938797,
+   "mean_if_complete": 101.15850286232477,
+   "mean_if_break": -17.929031926281922
   },
   {
    "hedge": "unhedged long target",
    "short_per_long": 0.0,
-   "mean": 78.30284181581854,
-   "std": 561.0018798540099,
-   "p_loss": 0.59155,
-   "p5": -377.60596659375227,
-   "es95": 405.5080527479767,
-   "mean_if_complete": 98.20275944348286,
-   "mean_if_break": 44.44099359811121
+   "mean": 70.44007605080269,
+   "std": 568.645633502711,
+   "p_loss": 0.6024,
+   "p5": -381.4702377083146,
+   "es95": 407.45245634722863,
+   "mean_if_complete": 101.73810406476089,
+   "mean_if_break": 41.969120938706865
   }
  ],
  "hedges_stress": [
   {
    "hedge": "ratio-neutral (contract)",
    "short_per_long": 4.5,
-   "mean": -13.356887365809234,
-   "std": 370.18055046551683,
-   "p_loss": 0.2575,
-   "p5": -609.0377694194918,
-   "es95": 1113.0327525558682,
-   "mean_if_complete": 100.91406945899092,
-   "mean_if_break": -207.92635439182027
+   "mean": -60.83223219373408,
+   "std": 459.40325601085226,
+   "p_loss": 0.35425,
+   "p5": -776.8590940677259,
+   "es95": 1384.2046493135165,
+   "mean_if_complete": 100.91429677614659,
+   "mean_if_break": -209.30152403298396
   },
   {
    "hedge": "dollar-neutral",
    "short_per_long": 3.70236376073573,
-   "mean": -2.3476211031408223,
-   "std": 335.8708198756886,
-   "p_loss": 0.27395,
-   "p5": -522.0023076642938,
-   "es95": 918.4960215931662,
-   "mean_if_complete": 101.79204886117473,
-   "mean_if_break": -179.6665186099484
+   "mean": -45.19677852826629,
+   "std": 408.0995771697453,
+   "p_loss": 0.3802,
+   "p5": -657.8455310289447,
+   "es95": 1132.3489410408006,
+   "mean_if_complete": 101.73996955917114,
+   "mean_if_break": -180.07197537262294
   },
   {
    "hedge": "variance-minimising",
-   "short_per_long": 3.2458420856912316,
-   "mean": 3.9534575437874606,
-   "std": 330.2625107490683,
-   "p_loss": 0.4226,
-   "p5": -473.83737550460944,
-   "es95": 811.7495953393674,
-   "mean_if_complete": 102.29455439892367,
-   "mean_if_break": -163.4921938582012
+   "short_per_long": 2.661142727496573,
+   "mean": -24.786518287661142,
+   "std": 381.4153457767452,
+   "p_loss": 0.59305,
+   "p5": -507.67319519683736,
+   "es95": 823.331552496584,
+   "mean_if_complete": 102.81778902867177,
+   "mean_if_break": -141.9162104272793
   },
   {
    "hedge": "unhedged long target",
    "short_per_long": 0.0,
-   "mean": 48.7537537300674,
-   "std": 543.2361417363915,
-   "p_loss": 0.62195,
-   "p5": -385.9688078560387,
-   "es95": 411.9912415118711,
-   "mean_if_complete": 105.86733902642112,
-   "mean_if_break": -48.49370231507541
+   "mean": 27.3778290235244,
+   "std": 531.2092516230914,
+   "p_loss": 0.644,
+   "p5": -391.4776711596842,
+   "es95": 414.7053592692199,
+   "mean_if_complete": 105.57246968844767,
+   "mean_if_break": -44.398072438371024
   }
  ],
  "signal": {
-  "decision": "WATCH",
+  "decision": "NO TRADE",
   "reasons": [
-   "expected excess return 1.1%/yr is below the 5% hurdle",
+   "expected excess return -2.1%/yr is negative at p=48%",
    "expected P&L is negative under the stress break case (stress: break-even p 69%)"
   ],
   "metrics": {
@@ -1523,16 +1523,16 @@
    "break_pnl_unit_stress": -222.1067095769178,
    "breakeven_p_base": 0.3629940188941483,
    "breakeven_p_stress": 0.6873295042721642,
-   "expected_pnl_unit": 42.12234344558506,
-   "expected_pnl_unit_stress": -18.991038703015278,
+   "expected_pnl_unit": 18.444047865697172,
+   "expected_pnl_unit_stress": -67.23101053556718,
    "regt_capital_unit": 539.5925,
-   "expected_return_on_capital": 0.0780632485543907,
-   "expected_annualized": 0.05726830020888207,
-   "expected_excess_annual": 0.011228396033659625,
-   "expected_annualized_stress": -0.026195803389660877,
-   "required_spread_for_hurdle": 0.28728173129749046,
+   "expected_return_on_capital": 0.03418143852202759,
+   "expected_annualized": 0.025213504266926368,
+   "expected_excess_annual": -0.02082639990829608,
+   "expected_annualized_stress": -0.09388370203907959,
+   "required_spread_for_hurdle": 0.3526126676797159,
    "max_borrow_fee_for_hurdle": 0.0,
-   "edge": 0.26556598110585183
+   "edge": 0.11628298110585172
   }
  },
  "iv_acquirer": [
