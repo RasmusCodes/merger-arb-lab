@@ -49,13 +49,20 @@ def test_plan_exact_hedge_and_exports():
     d["legs"][0]["quantity"] = 90
     with pytest.raises(ValueError):
         plan_from_dict(d)
+    d = json.loads(p.to_json())
+    d.pop("plan_hash")
+    with pytest.raises(ValueError):          # an export without its hash cannot prove it was not edited
+        plan_from_dict(d)
 
 
 def test_static_validation():
     checks = {n: s for n, s, _ in validate_plan(_plan(tl=520.0), "paper", 15_000, 0.02)}
     assert checks["LITE price band"] == "FAIL"
-    odd = build_pair_plan(DEAL, 3, 487.0, 131.6, {"LITE": 487.12, "MRVL": 131.57})
-    assert dict((n, s) for n, s, _ in validate_plan(odd, "paper", 15_000, 0.02))["exact ratio"] == "WARN"
+    with pytest.raises(ValueError):          # 3 x 4.5 = 13.5 MRVL: refused, never rounded
+        build_pair_plan(DEAL, 3, 487.0, 131.6, {"LITE": 487.12, "MRVL": 131.57})
+    p = _plan()
+    odd = dataclasses.replace(p, legs=(dataclasses.replace(p.acquirer, quantity=14), p.target))
+    assert dict((n, s) for n, s, _ in validate_plan(odd, "paper", 15_000, 0.02))["exact ratio"] == "FAIL"
     mkt = build_pair_plan(DEAL, 2, None, None, {"LITE": 487.12, "MRVL": 131.57}, order_type="MKT")
     assert "FAIL" in {s for n, s, _ in validate_plan(mkt, "live", 15_000, 0.02) if "order type" in n}
 
@@ -101,6 +108,7 @@ def test_short_first_full_fill_journal(tmp_path):
     for e in ("approved", "plan_submitted", "order_submitted", "fill", "plan_filled"):
         assert e in events
     assert events.index("order_submitted") < events.index("fill")
+    assert sorted(r["symbol"] for r in ex.journal.read() if r["event"] == "fill") == ["LITE", "MRVL"]
 
 
 def test_never_filled_on_submission_and_partial_fills(tmp_path):
@@ -127,10 +135,10 @@ def test_unhedged_alert_simultaneous(tmp_path):
     p = _plan()
     ex.submit(p, _approved(ex, p))
     st = ex.pump()
-    assert st.status == "IMBALANCED"
+    assert st.status == "PARTIAL" and st.unhedged
     assert st.imbalance_shares == -9 and "UNHEDGED" in st.alerts[-1]
     st = ex.cancel_all("test")
-    assert st.status == "CANCELLED" and "imbalance" in st.alerts[-1]
+    assert st.status == "NEEDS_ACTION" and "UNHEDGED" in st.alerts[-1]    # cancelled, but 9 MRVL short remain
 
 
 def test_short_rejection_sends_no_target(tmp_path):
@@ -141,6 +149,7 @@ def test_short_rejection_sends_no_target(tmp_path):
     b.short_level = 1.0                                   # borrow disappears between approval and submission
     st = ex.submit(p, a)
     assert st.status == "FAILED" and not st.legs["target"].handles
+    assert any("short not executed" in x for x in st.alerts)
 
 
 def test_duplicate_and_expiry(tmp_path):

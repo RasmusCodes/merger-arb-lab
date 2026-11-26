@@ -24,6 +24,7 @@ class BreakCase:
     acquirer_rebound: float           # j: % jump in the acquirer on termination (e.g. 0.12 = +12%)
     fee_per_share: float = 0.0        # cash reverse-termination fee per target share (regulatory break only)
     note: str = ""
+    acquirer_fee_per_share: float = 0.0   # the same fee's cost per acquirer share (lowers the acquirer's break price)
 
 
 def completion_pnl(spread_usd: float, carry_to_close: float) -> float:
@@ -32,9 +33,26 @@ def completion_pnl(spread_usd: float, carry_to_close: float) -> float:
 
 def break_pnl(L0: float, M0: float, ratio: float, case: BreakCase, carry_to_break: float = 0.0,
               fee_haircut: float = 0.0) -> float:
-    """Per-unit P&L if the deal terminates (target -> standalone + fee value, acquirer jumps by j)."""
+    """Per-unit P&L if the deal terminates: target -> standalone + fee value; acquirer jumps by j and, when it pays a
+    fee, loses that fee's value per share (which the short leg gains)."""
     fee = case.fee_per_share * (1.0 - fee_haircut)
-    return (case.target_standalone + fee - L0) - ratio * M0 * case.acquirer_rebound - carry_to_break
+    acq_fee = case.acquirer_fee_per_share * (1.0 - fee_haircut)
+    return (case.target_standalone + fee - L0) - ratio * (M0 * case.acquirer_rebound - acq_fee) - carry_to_break
+
+
+def with_regulatory_fee(case: BreakCase, fee_target: float, fee_acquirer: float) -> BreakCase:
+    """The same break case when it is a regulatory termination that pays the reverse fee (after-tax amounts)."""
+    return dataclasses.replace(case, name=f"{case.name} + fee", fee_per_share=fee_target,
+                               acquirer_fee_per_share=fee_acquirer)
+
+
+def mixed_break_pnl(L0: float, M0: float, ratio: float, case: BreakCase, carry_to_break: float, reg_share: float,
+                    fee_target: float, fee_acquirer: float) -> float:
+    """Break P&L averaged over break types: a share ``reg_share`` of breaks are regulatory terminations that pay the
+    reverse fee (merger agreement s8.2(d)); the rest (failed votes, other) pay nothing. ``case`` must carry no fee."""
+    b0 = break_pnl(L0, M0, ratio, case, carry_to_break)
+    b1 = break_pnl(L0, M0, ratio, with_regulatory_fee(case, fee_target, fee_acquirer), carry_to_break)
+    return (1.0 - reg_share) * b0 + reg_share * b1
 
 
 def breakeven_probability(C: float, B: float, df_complete: float = 1.0, df_break: float = 1.0) -> float:
@@ -51,21 +69,29 @@ def expected_pnl(p: float, C: float, B: float) -> float:
 
 
 def market_implied_standalone(L0: float, M0: float, ratio: float, p: float, j: float, C: float,
-                              fee_per_share: float = 0.0) -> float:
-    """Standalone price S at which the arb is priced at zero expected P&L for a given probability p and rebound j:
-    p*C + (1-p)*B(S) = 0  ->  S = L0 - fee + ratio*M0*j - p*C/(1-p)."""
+                              fee_per_share: float = 0.0, carry_to_break: float = 0.0, reg_share: float = 0.0,
+                              fee_acquirer: float = 0.0) -> float:
+    """Standalone price S (ex fee) at which the arb is priced at zero expected P&L for probability p and rebound j:
+    p*C + (1-p)*B(S) = 0 with B(S) = S - L0 - ratio*M0*j - carry + reg_share*(fee + ratio*fee_acquirer)
+    ->  S = L0 + ratio*M0*j + carry - reg_share*(fee + ratio*fee_acquirer) - p*C/(1-p).
+    (Old call signature: fee_per_share alone is treated as paid on every break, as before.)"""
     if p >= 1:
         return float("-inf")
-    return L0 - fee_per_share + ratio * M0 * j - p * C / (1.0 - p)
+    w = reg_share if (reg_share or fee_acquirer) else 1.0
+    return L0 + ratio * M0 * j + carry_to_break - w * (fee_per_share + ratio * fee_acquirer) - p * C / (1.0 - p)
 
 
-def implied_probability_grid(L0: float, M0: float, ratio: float, C: float, standalones, rebounds) -> pd.DataFrame:
-    """Break-even (market-implied, zero-excess-return) completion probability for a grid of break assumptions."""
+def implied_probability_grid(L0: float, M0: float, ratio: float, C: float, standalones, rebounds,
+                             carry_to_break: float = 0.0, reg_share: float = 0.0, fee_target: float = 0.0,
+                             fee_acquirer: float = 0.0) -> pd.DataFrame:
+    """Break-even (market-implied, zero-excess-return) completion probability for a grid of break assumptions,
+    with the regulatory fee mixed in for the share of breaks that pay it."""
     out = {}
     for j in rebounds:
         col = {}
         for S in standalones:
-            B = break_pnl(L0, M0, ratio, BreakCase("grid", S, j))
+            B = mixed_break_pnl(L0, M0, ratio, BreakCase("grid", S, j), carry_to_break, reg_share, fee_target,
+                                fee_acquirer)
             col[round(float(S), 2)] = breakeven_probability(C, B)
         out[round(float(j), 4)] = col
     df = pd.DataFrame(out)
@@ -112,7 +138,7 @@ DEFAULT_BOTTOM_UP = BottomUp((
         "price and below factor-model standalone estimates; CEO says shareholders are 'not happy'. Votes expected "
         "after the S-4 is effective (mid-2027, assumption)."),
     ProbabilityComponent(
-        "Required regulatory approvals (HSR, China SAMR, others) before the final outside date", 0.46, 0.61, 0.74,
+        "Required regulatory approvals (HSR, China SAMR, others) before the final outside date", 0.46, 0.605, 0.74,
         "Gate by gate (analytics/antitrust.py RegTree): US 0.93 (second request likely; a lawsuit ~11%, parties win "
         "~40% in court), EU 0.94, China SAMR 0.69 = the 2016-2025 base rate for notable US chip/tech deals (8 of 12 "
         "decided cases approved, the big chip deals with behavioural conditions; all 4 failures were timeouts in "

@@ -4,14 +4,20 @@ Research, risk and manually approved execution tooling for merger arbitrage. The
 Lumentum (LITE)**: an all-stock deal at a fixed 4.5 MRVL per LITE share, announced 2026-11-02, expected to close in
 1H-2028.
 
-> **Verdict (2026-11-24 close, revised 2026-11-25): unattractive at a 21.5% spread, so NO TRADE.**
+> **Verdict (2026-11-24 close, revised 2026-11-25 after a triple check): potentially attractive, small size only
+> (signal WATCH).**
 > The spread is real: the terms come from the merger agreement, and prices were checked against two independent sources.
-> It is wider than every comparable completed deal at the same stage, but it is fair pay for the risk.
 > - **Completion odds:** a gate-by-gate antitrust analysis puts completion at about 48%: US 93%, both votes 81%, EU 94%,
 >   China SAMR 69% (its base rate for comparable US chip deals). That matches the market's ~50%.
-> - **Return:** at base assumptions the expected return is about 2 points a year below Treasuries.
-> - **What would make it tradeable:** a ~35% spread (an alert-only trigger ladder watches for it), or real conviction
->   that LITE would hold ~$600 on its own if the deal broke.
+> - **Return:** about **+5% a year above Treasuries** on margin capital at base assumptions, just over the 5% hurdle.
+>   The base case includes the $3.2bn regulatory fee on both legs and LITE trading near its factor-model value ($613)
+>   if the deal breaks.
+> - **The catch:** the market implies LITE would be worth only $494-534 on a break. With the first version's blended
+>   break value ($512) the trade is -3% a year; under the stress case it loses.
+> - **Trading:** at most one 2-LITE / 9-MRVL lot per $10k. An alert-only ladder watches 23% (one lot) and 27% (second lot
+>   from $20k). The Nov 25 close was 23.6%.
+> - **The triple check fixed:** a missing fee in the signal, a break value whose central estimate was used as its best
+>   case, several simulation bugs, and serious safety bugs in the IBKR tool. Details are in REPORT.md.
 >
 > Reasoning and sources: **[docs/REPORT.md](docs/REPORT.md)**. How antitrust news moves each stock, and the trading
 > playbook: **[docs/ANTITRUST_AND_TRADING.md](docs/ANTITRUST_AND_TRADING.md)**. Research only, not investment advice.
@@ -28,7 +34,7 @@ Interactive version: https://rasmuscodes.github.io/projects/merger-arb/ (static,
 | `app/streamlit_app.py` | Local dashboard: all research views, plus an optional Execution tab that talks to the local service. |
 | `web/` | Public static dashboard. A JS port of the model, checked against Python outputs (`web/data/parity.json`: 102 checks, max difference 0). |
 | `scripts/` | Data pulls (Yahoo, Treasury, FINRA short interest, option chains), analysis runs, report charts, web snapshot, synthetic sample data, CRSP comparables. |
-| `tests/` | 61 tests: exchange-ratio, P&L, carry and margin maths; quote-freshness labels; scenarios; signal rules; Monte Carlo; antitrust identities and Bayesian consistency; execution safety (approval, duplicates, partial fills, imbalance, rejection, reconnect, service auth); triggers and readiness; dashboard smoke test; full offline pipeline. |
+| `tests/` | 96 tests: exchange-ratio, P&L, carry and margin maths; quote-freshness labels; scenarios; signal rules; Monte Carlo; antitrust identities and Bayesian consistency; execution safety (approval, duplicates, partial fills, imbalance, rejection, reconnect, service auth); triggers and readiness; dashboard smoke test; full offline pipeline; regression tests for every triple-check fix (`test_triple_check.py`, `test_execution_regressions.py`). |
 
 ## Quick start
 ```
@@ -36,7 +42,7 @@ python -m venv .venv
 .venv\Scripts\activate             # Windows (source .venv/bin/activate elsewhere)
 pip install -r requirements.txt
 pip install -e .
-pytest                             # 61 tests; the dashboard smoke test is skipped without a local data snapshot
+pytest                             # 96 tests; the dashboard smoke test is skipped without a local data snapshot
 ```
 **Offline (synthetic sample, labelled everywhere):**
 ```
@@ -50,6 +56,8 @@ python scripts/run_analysis.py            # console summary + outputs/
 python scripts/build_report_assets.py     # docs/figures + docs/report_numbers.json
 python scripts/build_web.py               # web/data snapshot + parity vectors
 python scripts/run_antitrust.py           # headline impacts, gate probabilities, entry-rule simulation
+python scripts/build_antitrust_charts.py
+python scripts/crash_crosssection.py      # break-value evidence: how far 49 names strayed from their factor models
 python scripts/antitrust_event_study.py   # needs MERGERARB_CRSP_DIR (licensed CRSP) for pre-2025 events
 streamlit run app/streamlit_app.py
 ```

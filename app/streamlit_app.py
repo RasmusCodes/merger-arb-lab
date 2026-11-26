@@ -24,6 +24,7 @@ from mergerarb.analytics import scenarios as sc
 from mergerarb.analytics import signal as sg
 from mergerarb.analytics import spread as sp
 from mergerarb.analytics import standalone as sa
+from mergerarb.analytics.carry import BrokerTerms
 from mergerarb.data import options as op
 from mergerarb.data import quotes as qt
 from mergerarb.data import yahoo
@@ -95,8 +96,8 @@ borrow = sb.number_input(f"{A} borrow fee (%/yr)", value=0.32, step=0.05) / 100
 sb.header("Completion probability")
 pa = sb.slider("MRVL vote passes", 0.5, 1.0, 0.90, 0.01)
 pt = sb.slider("LITE vote passes", 0.5, 1.0, 0.90, 0.01)
-prg = sb.slider("Regulatory approvals in time", 0.3, 1.0, 0.61, 0.01,
-                help="US 0.93 x EU 0.94 x China SAMR 0.69 (base); see the Antitrust tab")
+prg = sb.slider("Regulatory approvals in time", 0.3, 1.0, 0.605, 0.005,
+                help="US 0.93 x EU 0.94 x China SAMR 0.69 = 0.605 (base); see the Antitrust tab")
 po = sb.slider("No other termination", 0.8, 1.0, 0.97, 0.01)
 p = pa * pt * prg * po
 sb.metric("P(complete)", f"{p:.0%}")
@@ -105,14 +106,16 @@ S_two = next(e for e in tgt_est if e.method.startswith("two-factor")).estimate
 peer = {x: float(px[x].iloc[-1] / px.loc[:deal.unaffected_date, x].iloc[-1]) for x in ("COHR", "AAOI", "FN", "CIEN")}
 S_stress = deal.unaffected_target * min(peer.values())
 S_blend = float(np.sqrt(S_two * S_stress))
-S_break = sb.number_input(f"{T} price if the deal breaks", value=round(S_blend, 2), step=5.0,
-                          help=f"factor model {S_two:.0f}; worst-peer stress {S_stress:.0f}; blend {S_blend:.0f}")
+S_break = sb.number_input(f"{T} price if the deal breaks (before any fee)", value=round(S_two, 2), step=5.0,
+                          help=f"factor model {S_two:.0f} (base); first version's blend {S_blend:.0f}; worst-peer "
+                               f"stress {S_stress:.0f}")
 M_cf = next(e for e in acq_est if e.method.startswith("beta to SMH")).estimate
 delta = 1 - M0 / M_cf
-kappa = sb.slider(f"Share of {A}'s deal discount that reverses on a break", 0.0, 1.0, 0.5, 0.05,
-                  help=f"estimated deal discount {delta:.1%} (counterfactual {A} {M_cf:.0f})")
+kappa = sb.slider(f"Share of {A}'s deal discount that reverses on a break", 0.0, 1.0, 0.75, 0.05,
+                  help=f"estimated deal discount {delta:.1%} (counterfactual {A} {M_cf:.0f}); it appeared on the "
+                       "leak and announcement days, so most should reverse (base 75%)")
 j = kappa * delta / (1 - delta)
-hurdle = sb.slider("Hurdle: required excess return /yr", 0.0, 0.20, 0.05, 0.01)
+hurdle = sb.slider("Hurdle: required excess return /yr after financing", 0.0, 0.20, 0.05, 0.01)
 
 # ------------------------------------------------------------------------------------------------ core numbers
 d2 = deal.with_overrides(exchange_ratio=ratio, cash_per_share=cash, expected_close=close)
@@ -122,8 +125,16 @@ years = max((close - px.index[-1].date()).days / 365.25, 1 / 365)
 rf = rate_fn(years)
 base_case = pr.BreakCase("dashboard", S_break, j)
 stress_case = pr.BreakCase("stress", S_stress, delta / (1 - delta))
+# the $3.2bn regulatory fee: received by LITE, paid by MRVL (after tax), on the share of breaks that are regulatory
+reg_share = pa * pt * (1 - prg) / max(1 - p, 1e-12)
+fee_L = d2.regulatory_fee_per_target_share() * 0.79
+fee_M = d2.regulatory_fee_per_acquirer_share() * 0.79
+entry_cost = ((BrokerTerms().commission(lot, L0) + BrokerTerms().commission(round(lot * ratio), M0)) / lot
+              + (L0 + ratio * M0) * 10 / 1e4)
 sig = sg.evaluate(d2, sg.SignalInputs(L0, M0, px.index[-1].date(), close, borrow, p, base_case, stress_case,
-                                      risk_free=rf, hurdle_excess=hurdle,
+                                      risk_free=rf, hurdle_excess=hurdle, reg_break_share=reg_share,
+                                      fee_target=fee_L, fee_acquirer=fee_M, entry_cost_unit=entry_cost,
+                                      exit_cost_unit_break=entry_cost, break_years=0.98,
                                       data_fresh=all(qt.assess(qd[s]).label in ("real-time", "closing print") for s in (T, A))))
 m = sig.metrics
 pos = mg.units_to_position(int(lots), ratio) if lots else mg.Position(0, 0)
@@ -140,11 +151,12 @@ with tabs[0]:
     k = st.columns(4)
     k[0].metric("Gross spread", f"{gross:.2%}", f"${V - L0:,.2f} per {T} share")
     k[1].metric("Annualised if it closes", f"{m['annualized_if_complete']:.1%}", f"{years:.2f} years")
-    k[2].metric("Expected excess return /yr", f"{m['expected_excess_annual']:+.1%}", f"rf {rf:.2%}")
+    k[2].metric("Expected excess return /yr", f"{m['expected_excess_annual']:+.1%}", f"after financing at {rf:.2%}")
     k[3].metric("Break-even P(complete)", f"{m['breakeven_p_base']:.0%}", f"stress {m['breakeven_p_stress']:.0%}")
     k = st.columns(4)
     k[0].metric("Completion P&L / share", f"${m['completion_pnl_unit']:,.2f}")
-    k[1].metric("Break P&L / share", f"${m['break_pnl_unit_base']:,.2f}", f"stress ${m['break_pnl_unit_stress']:,.0f}")
+    k[1].metric("Break P&L / share (average)", f"${m['break_pnl_unit_base']:,.2f}",
+                f"vote ${m['break_pnl_unit_base_nofee']:,.0f} / regulatory ${m['break_pnl_unit_base_regulatory']:,.0f}")
     k[2].metric("Spread needed for hurdle", f"{m['required_spread_for_hurdle']:.1%}")
     k[3].metric("Max borrow fee for hurdle", f"{m['max_borrow_fee_for_hurdle']:.2%}")
     st.caption("The signal never sends orders. It recomputes whenever the spread, borrow fee, closing date or "
@@ -262,10 +274,14 @@ with tabs[4]:
 with tabs[5]:
     n = st.select_slider("Paths", options=[2000, 5000, 10000, 20000], value=5000)
     if st.button("Run Monte Carlo") and lots:
+        sig_band = next(e for e in tgt_est if e.method.startswith("two-factor"))
         cfg = mc.MCConfig(n_paths=int(n), standalone0=S_break, deal_discount=delta, rebound_kappa=kappa,
+                          standalone0_sigma=float(np.log(sig_band.estimate / sig_band.low)),
+                          kappa_low=max(0.0, kappa - 0.25), kappa_high=min(1.0, kappa + 0.25),
                           p_acq_vote_fail=1 - pa, p_tgt_vote_fail=1 - pt, p_reg_fail=1 - prg, p_other_fail=1 - po,
                           completion_mode=close, completion_max=deal.final_outside_date, borrow_fee=borrow,
-                          fee_per_share=deal.regulatory_fee_per_target_share())
+                          fee_per_share=deal.regulatory_fee_per_target_share(),
+                          acq_fee_per_share=deal.regulatory_fee_per_acquirer_share(), financing_rate=rf)
         r = mc.simulate(d2, pos, equity, L0, M0, px.index[-1].date(), cfg)
         st.write({k: (round(v, 4) if isinstance(v, float) else v) for k, v in r.summary.items()})
         st.dataframe(r.by_outcome, use_container_width=True)
@@ -308,14 +324,16 @@ with tabs[7]:
     b1, b2 = st.columns(2)
     mq = b1.slider("Market's completion odds now (q)", 0.2, 0.9, 0.50, 0.01,
                    help="Bloomberg reported arb desks near 50% (snippet)")
-    kap_a = b2.slider("Share of MRVL's deal discount that reverses on a break", 0.0, 1.0, 0.5, 0.05, key="kap_at")
+    kap_a = b2.slider("Share of MRVL's deal discount that reverses on a break", 0.0, 1.0, 0.75, 0.05, key="kap_at")
     jj = kap_a * delta / (1 - delta)
     ni = at.news_impact(tree, L0, M0, ratio, jj, market_q=mq)
     st.dataframe(ni[["headline", "p_event", "q_before", "market_q_after", "tgt_move", "acq_move", "spread_pts",
-                     "gross_spread_after", "arb_pnl_unit"]].style.format(
+                     "gross_spread_after", "arb_pnl_unit", "arb_pnl_unit_day"]].style.format(
         {"p_event": "{:.0%}", "q_before": "{:.1%}", "market_q_after": "{:.1%}", "tgt_move": "{:+.1%}",
-         "acq_move": "{:+.1%}", "spread_pts": "{:+.1%}", "gross_spread_after": "{:.1%}", "arb_pnl_unit": "${:+,.0f}"},
-        na_rep=""), use_container_width=True)
+         "acq_move": "{:+.1%}", "spread_pts": "{:+.1%}", "gross_spread_after": "{:.1%}", "arb_pnl_unit": "${:+,.0f}",
+         "arb_pnl_unit_day": "${:+,.0f}"}, na_rep=""), use_container_width=True)
+    st.caption("arb_pnl_unit = change from today once the headline is known; arb_pnl_unit_day = the move on the day "
+               "(a court ruling starts from the post-lawsuit odds).")
     st0 = at.from_q_and_rebound(L0, M0, ratio, mq, jj)
     st.write(f"Gap G = ${st0.gap:,.0f} per {T} share: every 10-point drop in q costs the hedged trade "
              f"${0.1 * st0.gap:,.0f} per {T} share. Implied break values: {T} ${st0.S:,.0f}, {A} ${st0.M_B:,.0f}; "
@@ -323,7 +341,8 @@ with tabs[7]:
     if st.button("Simulate entry rules on news flow (5,000 paths)"):
         mk = at.RegTree()
         rr = at.news_mc(tree, mk, L0, M0, ratio, px.index[-1].date(), max(pos.target_shares, 2),
-                        at.NewsMCConfig(n_paths=5000, acq_break_move=jj), at.default_strategies(threshold=0.35))
+                        at.NewsMCConfig(n_paths=5000, acq_break_move=jj, you_standalone0=S_break),
+                        at.default_strategies(threshold=0.27))
         st.write(f"Your P(complete) {rr['p_complete_you']:.1%} vs market tree {rr['p_complete_market']:.1%}")
         st.dataframe(rr["table"].style.format({"p_trade": "{:.0%}", "mean_pnl_if_traded": "${:,.0f}",
                                                "mean_pnl_all_paths": "${:,.0f}", "p_loss_if_traded": "{:.0%}",

@@ -11,7 +11,8 @@ Model (daily steps, business days):
         before a failure is announced; see the CRSP comparables), floored at 0.
   * Resolution: completion -> the target converts into R acquirer shares, closing the hedge at zero spread.
     Break -> target jumps to S_tau (+ after-tax cash fee per share for a regulatory failure), acquirer jumps by
-    j = kappa*delta/(1-delta), the reversal of a fraction kappa of the estimated deal discount delta.
+    j = kappa*delta/(1-delta), the reversal of a fraction kappa of the estimated deal discount delta, and on a
+    regulatory failure loses the after-tax fee it pays (per acquirer share), which the short leg gains.
   * Outcomes and timing (REAL-WORLD, analyst inputs): vote failure at the vote date (+/- window), regulatory failure
     uniformly in a window ending at the final outside date, other failure uniformly before the expected close,
     completion on a triangular date distribution. Independent draws.
@@ -55,8 +56,10 @@ class MCConfig:
     completion_min: dt.date = dt.date(2027, 11, 1)
     completion_mode: dt.date = dt.date(2028, 3, 31)
     completion_max: dt.date = dt.date(2028, 8, 1)
-    # model uncertainty: when set, each path draws its starting standalone value log-uniformly in
-    # [standalone0_low, standalone0_high] and its reversal fraction kappa uniformly in [kappa_low, kappa_high]
+    # model uncertainty: when set, each path draws its starting standalone value lognormally around standalone0
+    # (median standalone0, log-sd standalone0_sigma) or log-uniformly in [standalone0_low, standalone0_high], and its
+    # reversal fraction kappa uniformly in [kappa_low, kappa_high]
+    standalone0_sigma: float | None = None
     standalone0_low: float | None = None
     standalone0_high: float | None = None
     kappa_low: float | None = None
@@ -64,11 +67,13 @@ class MCConfig:
     # break jumps
     deal_discount: float = 0.21
     rebound_kappa: float = 0.5
-    fee_per_share: float = 33.2
+    fee_per_share: float = 33.2         # pre-tax regulatory fee per target share (received on a regulatory failure)
+    acq_fee_per_share: float = 0.0      # pre-tax cost of that fee per acquirer share (paid on a regulatory failure)
     fee_haircut: float = 0.21           # tax / leakage on the cash fee before it reaches the share price
     # costs
     borrow_fee: float = 0.0032
     liquidation_slippage_bps: float = 25.0
+    financing_rate: float = 0.0         # opportunity cost of the cash paying for the long (summary statistic only)
 
     @property
     def p_complete(self) -> float:
@@ -153,7 +158,9 @@ def simulate(deal: Deal, pos: Position, equity0: float, L0: float, M0: float, st
         zs = cfg.rho * z1 + np.sqrt(1 - cfg.rho ** 2) * z2
         logS = np.concatenate([np.zeros((n, 1)), np.cumsum(-0.5 * cfg.standalone_vol ** 2 * dtau
                                                            + cfg.standalone_vol * np.sqrt(dtau) * zs, axis=1)], axis=1)
-        if cfg.standalone0_low is not None and cfg.standalone0_high is not None:
+        if cfg.standalone0_sigma is not None:
+            s0 = cfg.standalone0 * np.exp(cfg.standalone0_sigma * rng.standard_normal(n))
+        elif cfg.standalone0_low is not None and cfg.standalone0_high is not None:
             lo_, hi_ = sorted((cfg.standalone0_low, cfg.standalone0_high))
             s0 = np.exp(rng.uniform(np.log(lo_), np.log(hi_), n))
         else:
@@ -196,8 +203,9 @@ def simulate(deal: Deal, pos: Position, equity0: float, L0: float, M0: float, st
         brk = (~liquidated) & (out > 0)
         L_end[comp] = R * M_end[comp]
         fee = np.where(out == 2, cfg.fee_per_share * (1 - cfg.fee_haircut), 0.0)
+        acq_fee = np.where(out == 2, cfg.acq_fee_per_share * (1 - cfg.fee_haircut), 0.0)
         L_end[brk] = S[rows, end_idx][brk] + fee[brk]
-        M_end[brk] = M_end[brk] * (1 + j_path[brk])
+        M_end[brk] = M_end[brk] * (1 + j_path[brk]) - acq_fee[brk]
         carry = borrow[rows, end_idx] + divs[rows, end_idx]
         slip = np.where(liquidated, (nL * L_end + nM * M_end) * cfg.liquidation_slippage_bps / 1e4, 0.0)
         pnl = nL * (L_end - L0) - nM * (M_end - M0) - carry - slip
@@ -215,12 +223,22 @@ def simulate(deal: Deal, pos: Position, equity0: float, L0: float, M0: float, st
         all_out.append(o)
         all_end.append(t_years[end_idx])
         all_dd.append(dd)
-        # per-unit-long terminal changes for hedge comparisons (ratio-neutral path, no margin truncation)
+        # per-unit-long terminal changes for hedge comparisons (ratio-neutral path, no margin truncation).
+        # The simulated acquirer path is the deal-affected price, which jumps up on a break. For the contract hedge
+        # that does not matter (completion locks the spread), but other hedge ratios need the acquirer's
+        # completion-state value: today's price is the probability-weighted mix M0 = p*M_C + (1-p)*E[M_B], so on
+        # completing paths the acquirer ends at M_C/M0 of its simulated level (two-state consistency at our p).
         Lr = L[rows, ridx].copy()
         Mr = M[rows, ridx].copy()
+        p_c = cfg.p_complete
+        p_brk = max(1.0 - p_c, 1e-12)
+        w_reg = (1 - cfg.p_acq_vote_fail) * (1 - cfg.p_tgt_vote_fail) * cfg.p_reg_fail / p_brk
+        mb_mean = (1 + j_path) - w_reg * cfg.acq_fee_per_share * (1 - cfg.fee_haircut) / M0
+        k_c = np.maximum((1.0 - (1.0 - p_c) * mb_mean) / max(p_c, 1e-12), 0.05)
+        Mr[out == 0] = Mr[out == 0] * k_c[out == 0]
         Lr[out == 0] = R * Mr[out == 0]
         Lr[out > 0] = S[rows, ridx][out > 0] + fee[out > 0]
-        Mr[out > 0] = Mr[out > 0] * (1 + j_path[out > 0])
+        Mr[out > 0] = Mr[out > 0] * (1 + j_path[out > 0]) - acq_fee[out > 0]
         all_dl.append(Lr - L0)
         all_dm.append(Mr - M0)
         all_carry.append((borrow[rows, ridx] + divs[rows, ridx]) / max(nM, 1))
@@ -234,9 +252,11 @@ def simulate(deal: Deal, pos: Position, equity0: float, L0: float, M0: float, st
     roe = pnl / equity0
     ann = np.where(roe > -1, (1 + roe) ** (1 / np.maximum(endy, 1 / 252)) - 1, -1.0)
     q05 = np.percentile(pnl, 5)
+    fin = cfg.financing_rate * nL * L0 * endy        # opportunity cost of the cash that paid for the long leg
     summary = {
         "n_paths": int(len(pnl)), "p_complete_input": cfg.p_complete,
         "mean_pnl": float(pnl.mean()), "median_pnl": float(np.median(pnl)), "std_pnl": float(pnl.std()),
+        "financing_rate": cfg.financing_rate, "mean_pnl_net_of_financing": float((pnl - fin).mean()),
         "p_loss": float((pnl < 0).mean()), "var95": float(-q05), "es95": float(-pnl[pnl <= q05].mean()),
         "p_liquidation": float((outc == 4).mean()), "mean_roe": float(roe.mean()),
         "mean_years": float(endy.mean()), "mean_annualized_roe": float(np.mean(ann)),

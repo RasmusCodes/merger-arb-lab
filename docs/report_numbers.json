@@ -21,19 +21,33 @@
   "window_end": "2026-11-24 00:00:00"
  },
  "S_base": 612.9505017107267,
+ "S_sigma": 0.1492849681726592,
  "S_blend": 511.50607228662386,
  "S_stress": 426.85088152446843,
  "stress_peer": "AAOI",
  "M_counterfactual": 167.0703447147502,
  "deal_discount": 0.21248740927279586,
- "rebound_base": 0.13491048382895118,
+ "rebound_half": 0.13491048382895118,
+ "rebound_base": 0.2023657257434268,
  "rebound_full": 0.26982096765790237,
+ "rebound_kappa": 0.75,
+ "kappa_range": [
+  0.5,
+  1.0
+ ],
  "peer_returns": {
   "COHR": 0.8190659167724403,
   "AAOI": 0.4670396427862229,
   "FN": 0.7898720654560114,
   "CIEN": 0.6587649173455983
  },
+ "p_complete": 0.4752066811499999,
+ "reg_break_share": 0.6099471801612097,
+ "fee_target_after_tax": 26.241573657346457,
+ "fee_acquirer_after_tax": 2.8096197583984406,
+ "entry_cost_unit": 2.079185,
+ "years_to_break": 0.9831239123278092,
+ "financing_rate": 0.04603990417522245,
  "completion_pnl_unit": 101.0377330759753,
  "carry_unit": {
   "acquirer_dividends_paid": 1.3499999999999999,
@@ -49,93 +63,131 @@
  },
  "break_cases": [
   {
-   "case": "optimistic: factor-model standalone, half MRVL discount reverses",
+   "case": "optimistic: factor-model standalone, half of MRVL's deal discount reverses",
    "target_standalone": 612.9505017107267,
    "acquirer_rebound": 0.13491048382895118,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": 43.86868621752846,
-   "break_pnl_pct_of_L": 0.09005724712089108,
+   "break_pnl_unit_vote_or_other": 43.86868621752846,
+   "break_pnl_unit_regulatory": 82.75354878766785,
+   "break_pnl_unit": 67.58639849314116,
+   "break_pnl_pct_of_L": 0.13874691758322621,
    "breakeven_p": 0.0,
-   "ev_unit_at_base_p": 71.26849548870429
+   "breakeven_p_net": 0.0,
+   "ev_unit_at_base_p": 83.48269618028797,
+   "ev_unit_net_at_base_p": 54.35648307483608,
+   "excess_per_year_at_base_p": 0.0870402167674092
+  },
+  {
+   "case": "base: factor-model standalone, 75% of MRVL's deal discount reverses",
+   "target_standalone": 612.9505017107267,
+   "acquirer_rebound": 0.2023657257434268,
+   "break_pnl_unit_vote_or_other": 3.9307984134344722,
+   "break_pnl_unit_regulatory": 42.81566098357386,
+   "break_pnl_unit": 27.648510689047164,
+   "break_pnl_pct_of_L": 0.05675913674053039,
+   "breakeven_p": 0.0,
+   "breakeven_p_net": 0.0,
+   "ev_unit_at_base_p": 62.52355949171856,
+   "ev_unit_net_at_base_p": 33.39734638626665,
+   "excess_per_year_at_base_p": 0.053478667207272505
   },
   {
    "case": "factor-model standalone, full reversal",
    "target_standalone": 612.9505017107267,
    "acquirer_rebound": 0.26982096765790237,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": -36.007089390659516,
-   "break_pnl_pct_of_L": -0.07391831456450057,
-   "breakeven_p": 0.2627395091808439,
-   "ev_unit_at_base_p": 29.67534198668181
+   "break_pnl_unit_vote_or_other": -36.007089390659516,
+   "break_pnl_unit_regulatory": 2.8777731794798584,
+   "break_pnl_unit": -12.289377115046833,
+   "break_pnl_pct_of_L": -0.025228644102165448,
+   "breakeven_p": 0.10844163496565015,
+   "breakeven_p_net": 0.35916101817988727,
+   "ev_unit_at_base_p": 41.56442280314913,
+   "ev_unit_net_at_base_p": 12.438209697697225,
+   "excess_per_year_at_base_p": 0.01991711764713583
   },
   {
-   "case": "base: blended standalone (geometric midpoint), half reversal",
+   "case": "pessimistic: blended standalone (first version's base), 75% reversal",
+   "target_standalone": 511.50607228662386,
+   "acquirer_rebound": 0.2023657257434268,
+   "break_pnl_unit_vote_or_other": -97.51363101066838,
+   "break_pnl_unit_regulatory": -58.62876844052899,
+   "break_pnl_unit": -73.7959187350557,
+   "break_pnl_pct_of_L": -0.15149433144821747,
+   "breakeven_p": 0.4220921886069052,
+   "breakeven_p_net": 0.5928187372156498,
+   "ev_unit_at_base_p": 9.286200695399025,
+   "ev_unit_net_at_base_p": -19.840012410052893,
+   "excess_per_year_at_base_p": -0.03176951272696555
+  },
+  {
+   "case": "blended standalone, half reversal (the first version's base case)",
    "target_standalone": 511.50607228662386,
    "acquirer_rebound": 0.13491048382895118,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": -57.57574320657439,
-   "break_pnl_pct_of_L": -0.11819622106785677,
-   "breakeven_p": 0.3629940188941483,
-   "ev_unit_at_base_p": 18.444047865697172
-  },
-  {
-   "case": "blended standalone, full reversal",
-   "target_standalone": 511.50607228662386,
-   "acquirer_rebound": 0.26982096765790237,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": -137.45151881476238,
-   "break_pnl_pct_of_L": -0.28217178275324845,
-   "breakeven_p": 0.5763426138706449,
-   "ev_unit_at_base_p": -23.149105636325302
+   "break_pnl_unit_vote_or_other": -57.57574320657439,
+   "break_pnl_unit_regulatory": -18.690880636434997,
+   "break_pnl_unit": -33.8580309309617,
+   "break_pnl_pct_of_L": -0.06950655060552163,
+   "breakeven_p": 0.2509940262410357,
+   "breakeven_p_net": 0.4665146162433637,
+   "ev_unit_at_base_p": 30.24533738396845,
+   "ev_unit_net_at_base_p": 1.1191242785165407,
+   "excess_per_year_at_base_p": 0.0017920368331711437
   },
   {
    "case": "AAOI-like standalone, half reversal",
    "target_standalone": 426.85088152446843,
    "acquirer_rebound": 0.13491048382895118,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": -142.23093396872983,
-   "break_pnl_pct_of_L": -0.2919833592723145,
-   "breakeven_p": 0.5846660636430925,
-   "ev_unit_at_base_p": -25.637857033544705
+   "break_pnl_unit_vote_or_other": -142.23093396872983,
+   "break_pnl_unit_regulatory": -103.34607139859037,
+   "break_pnl_unit": -118.51322169311709,
+   "break_pnl_pct_of_L": -0.24329368880997923,
+   "breakeven_p": 0.5397982523818246,
+   "breakeven_p_net": 0.6781392603733838,
+   "ev_unit_at_base_p": -14.18114113398294,
+   "ev_unit_net_at_base_p": -43.307354239434844,
+   "excess_per_year_at_base_p": -0.06934741336067857
   },
   {
    "case": "stress: AAOI-like standalone, full MRVL reversal",
    "target_standalone": 426.85088152446843,
    "acquirer_rebound": 0.26982096765790237,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": -222.1067095769178,
-   "break_pnl_pct_of_L": -0.4559589209577061,
-   "breakeven_p": 0.6873295042721642,
-   "ev_unit_at_base_p": -67.23101053556718
+   "break_pnl_unit_vote_or_other": -222.1067095769178,
+   "break_pnl_unit_regulatory": -183.22184700677838,
+   "break_pnl_unit": -198.3889973013051,
+   "break_pnl_pct_of_L": -0.40726925049537094,
+   "breakeven_p": 0.6625627479929169,
+   "breakeven_p_net": 0.7657980864438588,
+   "ev_unit_at_base_p": -56.09941451112181,
+   "ev_unit_net_at_base_p": -85.2256276165737,
+   "excess_per_year_at_base_p": -0.13647051248095193
   },
   {
    "case": "literal unaffected prices (LITE 913.95, MRVL 251.65)",
    "target_standalone": 913.95,
    "acquirer_rebound": 0.9126700615641865,
-   "fee_per_share": 0.0,
-   "break_pnl_unit": -115.61603988501024,
-   "break_pnl_pct_of_L": -0.23734611571072886,
-   "breakeven_p": 0.5336442486318025,
-   "ev_unit_at_base_p": -11.77886954158798
-  },
-  {
-   "case": "regulatory failure: stress standalone + after-tax fee, full reversal",
-   "target_standalone": 426.85088152446843,
-   "acquirer_rebound": 0.26982096765790237,
-   "fee_per_share": 26.241573657346457,
-   "break_pnl_unit": -195.86513591957134,
-   "break_pnl_pct_of_L": -0.40208806027174276,
-   "breakeven_p": 0.6596943188262326,
-   "ev_unit_at_base_p": -53.566419575992754
+   "break_pnl_unit_vote_or_other": -115.61603988501024,
+   "break_pnl_unit_regulatory": -76.73117731487086,
+   "break_pnl_unit": -91.89832760939755,
+   "break_pnl_pct_of_L": -0.18865644524839373,
+   "breakeven_p": 0.47631493709856115,
+   "breakeven_p_net": 0.6322793882999755,
+   "ev_unit_at_base_p": -0.2138225369465374,
+   "ev_unit_net_at_base_p": -29.340035642398448,
+   "excess_per_year_at_base_p": -0.046981756688745706
   }
  ],
  "market_implied_standalone": {
-  "p=50%, j=13%": 465.95804253221263,
-  "p=50%, j=27%": 545.8338181404007,
-  "p=64%, j=13%": 387.3731390286763,
-  "p=64%, j=27%": 467.24891463686436,
-  "p=80%, j=13%": 162.84484330428666,
-  "p=80%, j=27%": 242.72061891247472
+  "p=40%, j=13%": 478.0056145002686,
+  "p=40%, j=20%": 517.9435023043626,
+  "p=40%, j=27%": 557.8813901084567,
+  "p=48%, j=13%": 453.94901138694115,
+  "p=48%, j=20%": 493.8868991910351,
+  "p=48%, j=27%": 533.8247869951292,
+  "p=50%, j=13%": 444.32637014161014,
+  "p=50%, j=20%": 484.2642579457041,
+  "p=50%, j=27%": 524.2021457497982,
+  "p=64%, j=13%": 365.7414666380738,
+  "p=64%, j=20%": 405.6793544421678,
+  "p=64%, j=27%": 445.61724224626187
  },
  "bottom_up": [
   {
@@ -155,7 +207,7 @@
   {
    "component": "Required regulatory approvals (HSR, China SAMR, others) before the final outside date",
    "low": 0.46,
-   "base": 0.61,
+   "base": 0.605,
    "high": 0.74,
    "rationale": "Gate by gate (analytics/antitrust.py RegTree): US 0.93 (second request likely; a lawsuit ~11%, parties win ~40% in court), EU 0.94, China SAMR 0.69 = the 2016-2025 base rate for notable US chip/tech deals (8 of 12 decided cases approved, the big chip deals with behavioural conditions; all 4 failures were timeouts in high-tension periods). The combined firm would be the dominant merchant PAM4 DSP supplier (Accelink prospectus: Broadcom + Marvell ~90% of module DSPs, Marvell 60-70% of 50-100G/lane) AND a module/laser rival of its Chinese DSP customers - the vertical-foreclosure profile SAMR conditioned in Nvidia-Mellanox and AMD-Xilinx. Nov-2026 climate tilts negative (new US chip controls 16 Nov, tariff plans, truce only to 10 Jan 2027). Remedies are capped at 'material to the combined company', so Marvell can walk from heavy remedies."
   },
@@ -169,7 +221,7 @@
   {
    "component": "P(complete) = product",
    "low": 0.27379200000000004,
-   "base": 0.479277,
+   "base": 0.4753485,
    "high": 0.6681311999999999,
    "rationale": "assumes independence (sequential conditions)"
   }
@@ -179,338 +231,506 @@
   {
    "p_complete": 0.3,
    "break_case": "optimistic break",
-   "ev_unit": 61.01940027506251,
-   "return_on_regt_capital": 0.11308422610592718,
-   "annualized": 0.08260822723117589,
-   "excess_over_rf": 0.03656832305595344
+   "ev_unit": 74.0871843679914,
+   "ev_unit_net": 49.571942955108526,
+   "return_on_regt_capital": 0.1373021018045866,
+   "annualized": 0.10001057026034177,
+   "excess_over_rf": 0.08404352014174814
   },
   {
    "p_complete": 0.3,
    "break_case": "base break",
-   "ev_unit": -9.991700321809478,
-   "return_on_regt_capital": -0.018517122313244677,
-   "annualized": -0.013751993370972548,
-   "excess_over_rf": -0.059791897546194996
+   "ev_unit": 46.130662905125604,
+   "ev_unit_net": 21.61542149224273,
+   "return_on_regt_capital": 0.08549166807382536,
+   "annualized": 0.06266084698007246,
+   "excess_over_rf": 0.036646457719052714
+  },
+  {
+   "p_complete": 0.3,
+   "break_case": "pessimistic break",
+   "ev_unit": -24.880437691746394,
+   "ev_unit_net": -49.39567910462927,
+   "return_on_regt_capital": -0.04610968034534653,
+   "annualized": -0.034369521671562375,
+   "excess_over_rf": -0.08374468508334763
   },
   {
    "p_complete": 0.3,
    "break_case": "stress break",
-   "ev_unit": -125.16337678104986,
-   "return_on_regt_capital": -0.2319590742663211,
-   "annualized": -0.17759742933797673,
-   "excess_over_rf": -0.22363733351319917
+   "ev_unit": -112.09559268812096,
+   "ev_unit_net": -136.61083410100383,
+   "return_on_regt_capital": -0.20774119856766166,
+   "annualized": -0.15846259493999026,
+   "excess_over_rf": -0.23160793591943632
   },
   {
    "p_complete": 0.35,
    "break_case": "optimistic break",
-   "ev_unit": 63.87785261798486,
-   "return_on_regt_capital": 0.1183816539666227,
-   "annualized": 0.08642313731276152,
-   "excess_over_rf": 0.040383233137539075
+   "ev_unit": 75.86371034713312,
+   "ev_unit_net": 50.93734183382804,
+   "return_on_regt_capital": 0.14059444923184278,
+   "annualized": 0.10236891481494603,
+   "excess_over_rf": 0.08493403047213009
   },
   {
    "p_complete": 0.35,
    "break_case": "base break",
-   "ev_unit": -2.0610265076820014,
-   "return_on_regt_capital": -0.0038195981368940478,
-   "annualized": -0.0028312368005499744,
-   "excess_over_rf": -0.04887114097577242
+   "ev_unit": 49.904083274472015,
+   "ev_unit_net": 24.977714761166947,
+   "return_on_regt_capital": 0.09248476076756444,
+   "annualized": 0.06772864268366852,
+   "excess_over_rf": 0.04164838427513396
+  },
+  {
+   "p_complete": 0.35,
+   "break_case": "pessimistic break",
+   "ev_unit": -16.03479585119485,
+   "ev_unit_net": -40.96116436449992,
+   "return_on_regt_capital": -0.02971649133595232,
+   "annualized": -0.022101964091052917,
+   "excess_over_rf": -0.06829953541073724
   },
   {
    "p_complete": 0.35,
    "break_case": "stress break",
-   "ev_unit": -109.00615464840521,
-   "return_on_regt_capital": -0.20201569637903644,
-   "annualized": -0.1539610909765401,
-   "excess_over_rf": -0.20000099515176253
+   "ev_unit": -97.02029691925694,
+   "ev_unit_net": -121.94666543256203,
+   "return_on_regt_capital": -0.17980290111381633,
+   "annualized": -0.13657542029327185,
+   "excess_over_rf": -0.20333651943622627
   },
   {
    "p_complete": 0.4,
    "break_case": "optimistic break",
-   "ev_unit": 66.7363049609072,
-   "return_on_regt_capital": 0.12367908182731822,
-   "annualized": 0.09023336779529023,
-   "excess_over_rf": 0.044193463620067784
+   "ev_unit": 77.64023632627482,
+   "ev_unit_net": 52.30274071254756,
+   "return_on_regt_capital": 0.1438867966590989,
+   "annualized": 0.10472549603823733,
+   "excess_over_rf": 0.08579564189824722
   },
   {
    "p_complete": 0.4,
    "break_case": "base break",
-   "ev_unit": 5.869647306445486,
-   "return_on_regt_capital": 0.010877926039456602,
-   "annualized": 0.00804784619559662,
-   "excess_over_rf": -0.03799205797962583
+   "ev_unit": 53.67750364381842,
+   "ev_unit_net": 28.340008030091166,
+   "return_on_regt_capital": 0.09947785346130353,
+   "annualized": 0.07278803933660627,
+   "excess_over_rf": 0.04648798795662044
+  },
+  {
+   "p_complete": 0.4,
+   "break_case": "pessimistic break",
+   "ev_unit": -7.1891540106433,
+   "ev_unit_net": -32.526649624370556,
+   "return_on_regt_capital": -0.013323302326558097,
+   "annualized": -0.00988799973042287,
+   "excess_over_rf": -0.053355612828387994
   },
   {
    "p_complete": 0.4,
    "break_case": "stress break",
-   "ev_unit": -92.84893251576057,
-   "return_on_regt_capital": -0.17207231849175178,
-   "annualized": -0.13055352602167003,
-   "excess_over_rf": -0.17659343019689247
+   "ev_unit": -81.94500115039293,
+   "ev_unit_net": -107.2824967641202,
+   "return_on_regt_capital": -0.15186460365997106,
+   "annualized": -0.1148806277257437,
+   "excess_over_rf": -0.17598256896155673
   },
   {
    "p_complete": 0.45,
    "break_case": "optimistic break",
-   "ev_unit": 69.59475730382954,
-   "return_on_regt_capital": 0.12897650968801372,
-   "annualized": 0.09403894644002264,
-   "excess_over_rf": 0.047999042264800194
+   "ev_unit": 79.41676230541653,
+   "ev_unit_net": 53.66813959126708,
+   "return_on_regt_capital": 0.14717914408635505,
+   "annualized": 0.10708032031822534,
+   "excess_over_rf": 0.08662973870261215
   },
   {
    "p_complete": 0.45,
    "break_case": "base break",
-   "ev_unit": 13.80032112057297,
-   "return_on_regt_capital": 0.025575450215807247,
-   "annualized": 0.01888601715084315,
-   "excess_over_rf": -0.0271538870243793
+   "ev_unit": 57.45092401316483,
+   "ev_unit_net": 31.70230129901538,
+   "return_on_regt_capital": 0.10647094615504261,
+   "annualized": 0.07783910414841233,
+   "excess_over_rf": 0.05117304416961892
+  },
+  {
+   "p_complete": 0.45,
+   "break_case": "pessimistic break",
+   "ev_unit": 1.6564878299082508,
+   "ev_unit_net": -24.0921348842412,
+   "return_on_regt_capital": 0.0030698866828361236,
+   "annualized": 0.0022734902655652256,
+   "excess_over_rf": -0.038888908125101394
   },
   {
    "p_complete": 0.45,
    "break_case": "stress break",
-   "ev_unit": -76.69171038311592,
-   "return_on_regt_capital": -0.14212894060446712,
-   "annualized": -0.10736436056651122,
-   "excess_over_rf": -0.15340426474173366
+   "ev_unit": -66.86970538152892,
+   "ev_unit_net": -92.61832809567836,
+   "return_on_regt_capital": -0.12392630620612577,
+   "annualized": -0.09337026890414812,
+   "excess_over_rf": -0.1495021370799857
   },
   {
    "p_complete": 0.5,
    "break_case": "optimistic break",
-   "ev_unit": 72.45320964675187,
-   "return_on_regt_capital": 0.13427393754870923,
-   "annualized": 0.09783990071411575,
-   "excess_over_rf": 0.0517999965388933
+   "ev_unit": 81.19328828455824,
+   "ev_unit_net": 55.033538469986595,
+   "return_on_regt_capital": 0.15047149151361117,
+   "annualized": 0.10943339400151819,
+   "excess_over_rf": 0.08743761814610163
   },
   {
    "p_complete": 0.5,
    "break_case": "base break",
-   "ev_unit": 21.730994934700455,
-   "return_on_regt_capital": 0.04027297439215789,
-   "annualized": 0.02968401298676593,
-   "excess_over_rf": -0.01635589118845652
+   "ev_unit": 61.224344382511234,
+   "ev_unit_net": 35.064594567939594,
+   "return_on_regt_capital": 0.1134640388487817,
+   "annualized": 0.08288190336975654,
+   "excess_over_rf": 0.05571083952654513
+  },
+  {
+   "p_complete": 0.5,
+   "break_case": "pessimistic break",
+   "ev_unit": 10.502129670459802,
+   "ev_unit_net": -15.657620144111839,
+   "return_on_regt_capital": 0.019463075692230346,
+   "annualized": 0.014383583524935961,
+   "excess_over_rf": -0.024876921406465635
   },
   {
    "p_complete": 0.5,
    "break_case": "stress break",
-   "ev_unit": -60.534488250471256,
-   "return_on_regt_capital": -0.11218556271718243,
-   "annualized": -0.0843840355225498,
-   "excess_over_rf": -0.13042393969777225
+   "ev_unit": -51.79440961266489,
+   "ev_unit_net": -77.95415942723653,
+   "return_on_regt_capital": -0.09598800875228046,
+   "annualized": -0.07203696605420495,
+   "excess_over_rf": -0.12385403908956931
   },
   {
    "p_complete": 0.55,
    "break_case": "optimistic break",
-   "ev_unit": 75.31166198967422,
-   "return_on_regt_capital": 0.13957136540940474,
-   "annualized": 0.10163625779509688,
-   "excess_over_rf": 0.05559635361987444
+   "ev_unit": 82.96981426369994,
+   "ev_unit_net": 56.39893734870611,
+   "return_on_regt_capital": 0.15376383894086731,
+   "annualized": 0.1117847233937086,
+   "excess_over_rf": 0.08822049720031866
   },
   {
    "p_complete": 0.55,
    "break_case": "base break",
-   "ev_unit": 29.661668748827946,
-   "return_on_regt_capital": 0.054970498568508545,
-   "annualized": 0.04044254714450357,
-   "excess_over_rf": -0.005597357030718876
+   "ev_unit": 64.99776475185764,
+   "ev_unit_net": 38.42688783686381,
+   "return_on_regt_capital": 0.12045713154252079,
+   "annualized": 0.0879165023120636,
+   "excess_over_rf": 0.06010820966127257
+  },
+  {
+   "p_complete": 0.55,
+   "break_case": "pessimistic break",
+   "ev_unit": 19.34777151101136,
+   "ev_unit_net": -7.223105403982473,
+   "return_on_regt_capital": 0.03585626470162458,
+   "annualized": 0.026443318604976174,
+   "excess_over_rf": -0.011298545327720812
   },
   {
    "p_complete": 0.55,
    "break_case": "stress break",
-   "ev_unit": -44.377266117826586,
-   "return_on_regt_capital": -0.08224218482989773,
-   "annualized": -0.06160371737787651,
-   "excess_over_rf": -0.10764362155309895
+   "ev_unit": -36.719113843800855,
+   "ev_unit_net": -63.289990758794694,
+   "return_on_regt_capital": -0.06804971129843512,
+   "annualized": -0.05087385468623051,
+   "excess_over_rf": -0.09899963926665252
   },
   {
    "p_complete": 0.6,
    "break_case": "optimistic break",
-   "ev_unit": 78.17011433259657,
-   "return_on_regt_capital": 0.14486879327010024,
-   "annualized": 0.10542804457524846,
-   "excess_over_rf": 0.05938814040002601
+   "ev_unit": 84.74634024284165,
+   "ev_unit_net": 57.76433622742563,
+   "return_on_regt_capital": 0.15705618636812346,
+   "annualized": 0.11413431475975355,
+   "excess_over_rf": 0.0889795186644651
   },
   {
    "p_complete": 0.6,
    "break_case": "base break",
-   "ev_unit": 37.59234256295542,
-   "return_on_regt_capital": 0.06966802274485917,
-   "annualized": 0.05116231064910037,
-   "excess_over_rf": 0.005122406473877926
+   "ev_unit": 68.77118512120404,
+   "ev_unit_net": 41.789181105788025,
+   "return_on_regt_capital": 0.12745022423625985,
+   "annualized": 0.0929429653666034,
+   "excess_over_rf": 0.06437157358712532
+  },
+  {
+   "p_complete": 0.6,
+   "break_case": "pessimistic break",
+   "ev_unit": 28.1934133515629,
+   "ev_unit_net": 1.211409336146879,
+   "return_on_regt_capital": 0.05224945371101878,
+   "annualized": 0.03845369700362333,
+   "excess_over_rf": 0.0018660409982312086
   },
   {
    "p_complete": 0.6,
    "break_case": "stress break",
-   "ev_unit": -28.220043985181952,
-   "return_on_regt_capital": -0.05229880694261309,
-   "annualized": -0.039015221315104265,
-   "excess_over_rf": -0.0850551254903267
+   "ev_unit": -21.64381807493686,
+   "ev_unit_net": -48.62582209035288,
+   "return_on_regt_capital": -0.040111413844589876,
+   "annualized": -0.02987453361064918,
+   "excess_over_rf": -0.07490265667086919
   },
   {
    "p_complete": 0.65,
    "break_case": "optimistic break",
-   "ev_unit": 81.0285666755189,
-   "return_on_regt_capital": 0.15016622113079575,
-   "annualized": 0.1092152876659076,
-   "excess_over_rf": 0.06317538349068516
+   "ev_unit": 86.52286622198336,
+   "ev_unit_net": 59.12973510614515,
+   "return_on_regt_capital": 0.1603485337953796,
+   "annualized": 0.11648217432435315,
+   "excess_over_rf": 0.08971575673138737
   },
   {
    "p_complete": 0.65,
    "break_case": "base break",
-   "ev_unit": 45.52301637708291,
-   "return_on_regt_capital": 0.08436554692120983,
-   "annualized": 0.06184397311166223,
-   "excess_over_rf": 0.015804068936439784
+   "ev_unit": 72.54460549055047,
+   "ev_unit_net": 45.151474374712244,
+   "return_on_regt_capital": 0.13444331692999897,
+   "annualized": 0.09796135602307698,
+   "excess_over_rf": 0.06850696496091979
+  },
+  {
+   "p_complete": 0.65,
+   "break_case": "pessimistic break",
+   "ev_unit": 37.03905519211446,
+   "ev_unit_net": 9.645924076276245,
+   "return_on_regt_capital": 0.06864264272041302,
+   "annualized": 0.05041568503763583,
+   "excess_over_rf": 0.014635468539190108
   },
   {
    "p_complete": 0.65,
    "break_case": "stress break",
-   "ev_unit": -12.062821852537283,
-   "return_on_regt_capital": -0.022355429055328387,
-   "annualized": -0.016610944641543002,
-   "excess_over_rf": -0.06265084881676544
+   "ev_unit": -6.568522306072822,
+   "ev_unit_net": -33.96165342191104,
+   "return_on_regt_capital": -0.012173116390744539,
+   "annualized": -0.009033021130796182,
+   "excess_over_rf": -0.051528988437480876
   },
   {
    "p_complete": 0.7,
    "break_case": "optimistic break",
-   "ev_unit": 83.88701901844125,
-   "return_on_regt_capital": 0.15546364899149126,
-   "annualized": 0.11299801340168125,
-   "excess_over_rf": 0.06695810922645881
+   "ev_unit": 88.29939220112506,
+   "ev_unit_net": 60.49513398486466,
+   "return_on_regt_capital": 0.16364088122263573,
+   "annualized": 0.11882830827232072,
+   "excess_over_rf": 0.09043022205980897
   },
   {
    "p_complete": 0.7,
    "break_case": "base break",
-   "ev_unit": 53.453690191210384,
-   "return_on_regt_capital": 0.09906307109756045,
-   "annualized": 0.07248818367375431,
-   "excess_over_rf": 0.026448279498531867
+   "ev_unit": 76.31802585989686,
+   "ev_unit_net": 48.513767643636456,
+   "return_on_regt_capital": 0.14143640962373805,
+   "annualized": 0.10297173688771544,
+   "excess_over_rf": 0.07252006057329563
+  },
+  {
+   "p_complete": 0.7,
+   "break_case": "pessimistic break",
+   "ev_unit": 45.884697032666,
+   "ev_unit_net": 18.080438816405593,
+   "return_on_regt_capital": 0.08503583172980722,
+   "annualized": 0.062330215598270344,
+   "excess_over_rf": 0.027027266317244857
   },
   {
    "p_complete": 0.7,
    "break_case": "stress break",
-   "ev_unit": 4.094400280107351,
-   "return_on_regt_capital": 0.007587948831956247,
-   "annualized": 0.005616191124397929,
-   "excess_over_rf": -0.04042371305082452
+   "ev_unit": 8.506773462791173,
+   "ev_unit_net": -19.297484753469234,
+   "return_on_regt_capital": 0.01576518106310072,
+   "annualized": 0.011656283503170162,
+   "excess_over_rf": -0.028846548747021587
   },
   {
    "p_complete": 0.75,
    "break_case": "optimistic break",
-   "ev_unit": 86.74547136136358,
-   "return_on_regt_capital": 0.16076107685218677,
-   "annualized": 0.11677624784457774,
-   "excess_over_rf": 0.0707363436693553
+   "ev_unit": 90.07591818026677,
+   "ev_unit_net": 61.860532863584176,
+   "return_on_regt_capital": 0.16693322864989185,
+   "annualized": 0.12117272274895208,
+   "excess_over_rf": 0.091123866403117
   },
   {
    "p_complete": 0.75,
    "break_case": "base break",
-   "ev_unit": 61.38436400533787,
-   "return_on_regt_capital": 0.1137605952739111,
-   "annualized": 0.08309557189809413,
-   "excess_over_rf": 0.03705566772287169
+   "ev_unit": 80.09144622924327,
+   "ev_unit_net": 51.876060912560675,
+   "return_on_regt_capital": 0.14842950231747712,
+   "annualized": 0.10797416970090734,
+   "excess_over_rf": 0.0764162063482466
+  },
+  {
+   "p_complete": 0.75,
+   "break_case": "pessimistic break",
+   "ev_unit": 54.73033887321756,
+   "ev_unit_net": 26.51495355653496,
+   "return_on_regt_capital": 0.10142902073920146,
+   "annualized": 0.07419818979418635,
+   "excess_over_rf": 0.03905794169116947
   },
   {
    "p_complete": 0.75,
    "break_case": "stress break",
-   "ev_unit": 20.251622412752013,
-   "return_on_regt_capital": 0.037531326719240934,
-   "annualized": 0.027672790859442742,
-   "excess_over_rf": -0.018367113315779705
+   "ev_unit": 23.58206923165521,
+   "ev_unit_net": -4.6333160850273885,
+   "return_on_regt_capital": 0.04370347851694605,
+   "annualized": 0.03219863413812707,
+   "excess_over_rf": -0.0068251218732063535
   },
   {
    "p_complete": 0.8,
    "break_case": "optimistic break",
-   "ev_unit": 89.60392370428593,
-   "return_on_regt_capital": 0.16605850471288228,
-   "annualized": 0.12055001678805977,
-   "excess_over_rf": 0.07451011261283733
+   "ev_unit": 91.85244415940846,
+   "ev_unit_net": 63.22593174230369,
+   "return_on_regt_capital": 0.17022557607714797,
+   "annualized": 0.12351542386038794,
+   "excess_over_rf": 0.09179758683928373
   },
   {
    "p_complete": 0.8,
    "break_case": "base break",
-   "ev_unit": 69.31503781946536,
-   "return_on_regt_capital": 0.12845811945026175,
-   "annualized": 0.09366674860926238,
-   "excess_over_rf": 0.04762684443403994
+   "ev_unit": 83.86486659858967,
+   "ev_unit_net": 55.238354181484894,
+   "return_on_regt_capital": 0.1554225950112162,
+   "annualized": 0.11296871535436837,
+   "excess_over_rf": 0.08020044110225735
+  },
+  {
+   "p_complete": 0.8,
+   "break_case": "pessimistic break",
+   "ev_unit": 63.575980713769106,
+   "ev_unit_net": 34.94946829666432,
+   "return_on_regt_capital": 0.11782220974859567,
+   "annualized": 0.08602047849038508,
+   "excess_over_rf": 0.05074305372083932
   },
   {
    "p_complete": 0.8,
    "break_case": "stress break",
-   "ev_unit": 36.40884454539669,
-   "return_on_regt_capital": 0.06747470460652565,
-   "annualized": 0.04956503024019354,
-   "excess_over_rf": 0.0035251260649710944
+   "ev_unit": 38.657365000519235,
+   "ev_unit_net": 10.03085258341445,
+   "return_on_regt_capital": 0.07164177597079135,
+   "annualized": 0.0525989678916845,
+   "excess_over_rf": 0.014563772106215402
   },
   {
    "p_complete": 0.85,
    "break_case": "optimistic break",
-   "ev_unit": 92.46237604720827,
-   "return_on_regt_capital": 0.17135593257357778,
-   "annualized": 0.12431934576101789,
-   "excess_over_rf": 0.07827944158579545
+   "ev_unit": 93.62897013855017,
+   "ev_unit_net": 64.5913306210232,
+   "return_on_regt_capital": 0.17351792350440412,
+   "annualized": 0.12585641767397293,
+   "excess_over_rf": 0.09245222964145414
   },
   {
    "p_complete": 0.85,
    "break_case": "base break",
-   "ev_unit": 77.24571163359283,
-   "return_on_regt_capital": 0.14315564362661237,
-   "annualized": 0.10420230668784902,
-   "excess_over_rf": 0.058162402512626575
+   "ev_unit": 87.63828696793607,
+   "ev_unit_net": 58.600647450409106,
+   "return_on_regt_capital": 0.16241568770495526,
+   "annualized": 0.11795543390786967,
+   "excess_over_rf": 0.08387751828508921
+  },
+  {
+   "p_complete": 0.85,
+   "break_case": "pessimistic break",
+   "ev_unit": 72.42162255432063,
+   "ev_unit_net": 43.38398303679367,
+   "return_on_regt_capital": 0.13421539875798985,
+   "annualized": 0.09779792375119167,
+   "excess_over_rf": 0.06209728029930251
   },
   {
    "p_complete": 0.85,
    "break_case": "stress break",
-   "ev_unit": 52.566066678041324,
-   "return_on_regt_capital": 0.09741808249381029,
-   "annualized": 0.07129869485863027,
-   "excess_over_rf": 0.025258790683407827
+   "ev_unit": 53.73266076938323,
+   "ev_unit_net": 24.69502125185626,
+   "return_on_regt_capital": 0.09958007342463661,
+   "annualized": 0.07286193198491264,
+   "excess_over_rf": 0.03534700019067416
   },
   {
    "p_complete": 0.9,
    "break_case": "optimistic break",
-   "ev_unit": 95.32082839013061,
-   "return_on_regt_capital": 0.1766533604342733,
-   "annualized": 0.12808426003166828,
-   "excess_over_rf": 0.08204435585644584
+   "ev_unit": 95.40549611769188,
+   "ev_unit_net": 65.95672949974272,
+   "return_on_regt_capital": 0.17681027093166027,
+   "annualized": 0.12819571021861065,
+   "excess_over_rf": 0.09308859382431527
   },
   {
    "p_complete": 0.9,
    "break_case": "base break",
-   "ev_unit": 85.17638544772034,
-   "return_on_regt_capital": 0.15785316780296305,
-   "annualized": 0.11470282182118008,
-   "excess_over_rf": 0.06866291764595764
+   "ev_unit": 91.4117073372825,
+   "ev_unit_net": 61.962940719333325,
+   "return_on_regt_capital": 0.1694087803986944,
+   "annualized": 0.1229343846055364,
+   "excess_over_rf": 0.08745192589945874
+  },
+  {
+   "p_complete": 0.9,
+   "break_case": "pessimistic break",
+   "ev_unit": 81.2672643948722,
+   "ev_unit_net": 51.81849777692304,
+   "return_on_regt_capital": 0.1506085877673841,
+   "annualized": 0.1095313401945619,
+   "excess_over_rf": 0.07313447966156339
   },
   {
    "p_complete": 0.9,
    "break_case": "stress break",
-   "ev_unit": 68.723288810686,
-   "return_on_regt_capital": 0.127361460381095,
-   "annualized": 0.09287921480523331,
-   "excess_over_rf": 0.046839310630010865
+   "ev_unit": 68.80795653824727,
+   "ev_unit_net": 39.35918992029811,
+   "return_on_regt_capital": 0.12751837087848195,
+   "annualized": 0.09299190767935306,
+   "excess_over_rf": 0.0555499290449052
   },
   {
    "p_complete": 0.95,
    "break_case": "optimistic break",
-   "ev_unit": 98.17928073305295,
-   "return_on_regt_capital": 0.1819507882949688,
-   "annualized": 0.13184478461137528,
-   "excess_over_rf": 0.08580488043615284
+   "ev_unit": 97.18202209683359,
+   "ev_unit_net": 67.32212837846224,
+   "return_on_regt_capital": 0.1801026183589164,
+   "annualized": 0.13053330748511272,
+   "excess_over_rf": 0.09370743439749583
   },
   {
    "p_complete": 0.95,
    "break_case": "base break",
-   "ev_unit": 93.1070592618478,
-   "return_on_regt_capital": 0.17255069197931364,
-   "annualized": 0.12516885321351734,
-   "excess_over_rf": 0.0791289490382949
+   "ev_unit": 95.18512770662889,
+   "ev_unit_net": 65.32523398825754,
+   "return_on_regt_capital": 0.17640187309243344,
+   "annualized": 0.1279056258917335,
+   "excess_over_rf": 0.09092790477512729
+  },
+  {
+   "p_complete": 0.95,
+   "break_case": "pessimistic break",
+   "ev_unit": 90.11290623542374,
+   "ev_unit_net": 60.25301251705238,
+   "return_on_regt_capital": 0.1670017767767783,
+   "annualized": 0.12122151626434352,
+   "excess_over_rf": 0.08386774681204977
   },
   {
    "p_complete": 0.95,
    "break_case": "stress break",
-   "ev_unit": 84.88051094333062,
-   "return_on_regt_capital": 0.1573048382683796,
-   "annualized": 0.1143116953510932,
-   "excess_over_rf": 0.06827179117587076
+   "ev_unit": 83.88325230711126,
+   "ev_unit_net": 54.02335858873991,
+   "return_on_regt_capital": 0.1554566683323272,
+   "annualized": 0.11299303169467811,
+   "excess_over_rf": 0.07519652828602941
   }
  ],
  "calibration": {
@@ -528,7 +748,7 @@
   "units": 2,
   "binding": "loss budget (worst plausible stress)",
   "recommended_units": 1,
-  "es95_per_unit": 1996.0544766233843,
+  "es95_per_unit": 1968.2421554696177,
   "liquidation_moves": {
    "acquirer_up_target_flat": 2.8590942132782984,
    "target_down_acquirer_flat": null,
@@ -805,20 +1025,20 @@
   },
   {
    "key": "4b_break_model",
-   "name": "Fails at the votes; LITE to factor-model standalone, MRVL recovers half its deal discount",
+   "name": "Fails at the votes; LITE to factor-model standalone, MRVL recovers 75% of its deal discount",
    "outcome": "break",
    "end_date": "2027-06-30",
    "years": 0.5968514715947981,
    "pnl_long": 503.32200684290683,
-   "pnl_short": -319.5031024327519,
+   "pnl_short": -479.2546536491279,
    "dividends_paid": 2.16,
    "borrow_cost": 4.526296372602748,
    "interest_net": 0.0,
    "commissions_slippage": 8.31674,
-   "net_pnl": 168.81586803755215,
-   "return_on_equity": 0.016881586803755216,
-   "annualized_roe": 0.028445369772437168,
-   "return_on_regt_capital": 0.0782145174541678,
+   "net_pnl": 9.06431682117621,
+   "return_on_equity": 0.0009064316821176209,
+   "annualized_roe": 0.0015191537304015679,
+   "return_on_regt_capital": 0.00419961212450887,
    "peak_maint_req": 1197.598,
    "min_excess_liquidity": 8694.342809781243,
    "max_drawdown": 0.013351217100124636,
@@ -849,23 +1069,23 @@
   },
   {
    "key": "4d_break_regulatory",
-   "name": "Regulatory failure at the final outside date (2028-08-01); stress standalone + USD 3.2bn fee (~$33/sh)",
+   "name": "Regulatory failure at the final outside date (2028-08-01); stress standalone + USD 3.2bn fee (~$26/sh after tax; MRVL pays ~$2.81/sh)",
    "outcome": "break",
    "end_date": "2028-08-01",
    "years": 1.6865160848733745,
-   "pnl_long": -108.20774652315686,
-   "pnl_short": -639.0062048655038,
+   "pnl_long": -136.11017927274042,
+   "pnl_short": -588.433049214332,
    "dividends_paid": 7.5600000000000005,
    "borrow_cost": 12.789901676712232,
    "interest_net": 0.0,
    "commissions_slippage": 8.31674,
-   "net_pnl": -775.8805930653729,
-   "return_on_equity": -0.07758805930653728,
-   "annualized_roe": -0.04675916351563536,
-   "return_on_regt_capital": -0.35947524894497834,
+   "net_pnl": -753.2098701637846,
+   "return_on_equity": -0.07532098701637846,
+   "annualized_roe": -0.045370696547860745,
+   "return_on_regt_capital": -0.3489716175464747,
    "peak_maint_req": 1197.598,
    "min_excess_liquidity": 8680.679204477135,
-   "max_drawdown": 0.0770050273802026,
+   "max_drawdown": 0.07473652213426105,
    "liquidated": false,
    "liquidation_date": null
   },
@@ -1071,20 +1291,20 @@
   },
   {
    "key": "4b_break_model",
-   "name": "Fails at the votes; LITE to factor-model standalone, MRVL recovers half its deal discount",
+   "name": "Fails at the votes; LITE to factor-model standalone, MRVL recovers 75% of its deal discount",
    "outcome": "break",
    "end_date": "2027-06-30",
    "years": 0.5968514715947981,
    "pnl_long": 2264.949030793081,
-   "pnl_short": -1437.7639609473836,
+   "pnl_short": -2156.6459414210753,
    "dividends_paid": 9.719999999999999,
    "borrow_cost": 20.368333676712307,
    "interest_net": 0.0,
    "commissions_slippage": 23.425330000000002,
-   "net_pnl": 773.6714061689851,
-   "return_on_equity": 0.0773671406168985,
-   "annualized_roe": 0.1329848067789825,
-   "return_on_regt_capital": 0.079655934408217,
+   "net_pnl": 54.7894256952933,
+   "return_on_equity": 0.0054789425695293305,
+   "annualized_roe": 0.009196718223129619,
+   "return_on_regt_capital": 0.005641029078558078,
    "peak_maint_req": 5389.191,
    "min_excess_liquidity": 4131.542644015596,
    "max_drawdown": 0.060171444981894896,
@@ -1115,23 +1335,23 @@
   },
   {
    "key": "4d_break_regulatory",
-   "name": "Regulatory failure at the final outside date (2028-08-01); stress standalone + USD 3.2bn fee (~$33/sh)",
+   "name": "Regulatory failure at the final outside date (2028-08-01); stress standalone + USD 3.2bn fee (~$26/sh after tax; MRVL pays ~$2.81/sh)",
    "outcome": "break",
    "end_date": "2028-08-01",
    "years": 1.6865160848733745,
-   "pnl_long": -486.93485935420586,
-   "pnl_short": -2875.527921894767,
+   "pnl_long": -612.4958067273319,
+   "pnl_short": -2647.9487214644937,
    "dividends_paid": 34.019999999999996,
    "borrow_cost": 57.5545575452052,
    "interest_net": 0.0,
    "commissions_slippage": 23.425330000000002,
-   "net_pnl": -3477.462668794178,
-   "return_on_equity": -0.34774626687941784,
-   "annualized_roe": -0.22382352370459246,
-   "return_on_regt_capital": -0.35803383199092914,
+   "net_pnl": -3375.444415737031,
+   "return_on_equity": -0.33754444157370306,
+   "annualized_roe": -0.2166479498605579,
+   "return_on_regt_capital": -0.3475302005924255,
    "peak_maint_req": 5389.191,
    "min_excess_liquidity": 4070.0564201471016,
-   "max_drawdown": 0.34634579116640296,
+   "max_drawdown": 0.33612206118181315,
    "liquidated": false,
    "liquidation_date": null
   },
@@ -1252,105 +1472,130 @@
  ],
  "mc": {
   "n_paths": 20000,
-  "p_complete_input": 0.479277,
-  "mean_pnl": 117.80191857358324,
-  "median_pnl": 402.47659238749986,
-  "std_pnl": 1597.313125672838,
-  "p_loss": 0.2746,
-  "var95": 2331.127713346577,
-  "es95": 3992.1089532467686,
-  "p_liquidation": 0.0057,
-  "mean_roe": 0.011780191857358326,
-  "mean_years": 1.1833841269841268,
-  "mean_annualized_roe": 0.005940615311951035,
-  "roe_per_year_of_expected": 0.009954664414318562,
-  "median_max_drawdown": 0.048428604225463495,
-  "p95_max_drawdown": 0.2630521163269197
+  "p_complete_input": 0.4752066811499999,
+  "mean_pnl": 275.5444806923079,
+  "median_pnl": 403.6458036826241,
+  "std_pnl": 1870.9330167868602,
+  "financing_rate": 0.04603990417522245,
+  "mean_pnl_net_of_financing": 169.29233459601258,
+  "p_loss": 0.2441,
+  "var95": 2240.138380126492,
+  "es95": 3936.4843109392355,
+  "p_liquidation": 0.00545,
+  "mean_roe": 0.02755444806923079,
+  "mean_years": 1.1844244047619046,
+  "mean_annualized_roe": 0.02546041998986098,
+  "roe_per_year_of_expected": 0.02326399891664664,
+  "median_max_drawdown": 0.04729227816194867,
+  "p95_max_drawdown": 0.2566368248554092
  },
  "mc_by_outcome": [
   {
    "outcome": "complete",
-   "share": 0.4743,
-   "mean_pnl": 403.8130625417763,
-   "p5_pnl": 393.22784983277717,
-   "p95_pnl": 409.9573431836194,
-   "mean_years": 1.3706180202068878
+   "share": 0.4768,
+   "mean_pnl": 403.88787852398866,
+   "p5_pnl": 393.6019450433398,
+   "p95_pnl": 409.9713269357062,
+   "mean_years": 1.3705973021199531
   },
   {
    "outcome": "vote failure",
-   "share": 0.18935,
-   "mean_pnl": -158.73162400015974,
-   "p5_pnl": -2658.9824264831095,
-   "p95_pnl": 2235.9221786050166,
-   "mean_years": 0.6185509323877425
+   "share": 0.1923,
+   "mean_pnl": 59.85437045694506,
+   "p5_pnl": -2666.7430324997504,
+   "p95_pnl": 2918.68735750874,
+   "mean_years": 0.6195521630389025
   },
   {
    "outcome": "regulatory failure",
-   "share": 0.3155,
-   "mean_pnl": -79.64407327998521,
-   "p5_pnl": -3690.85093744743,
-   "p95_pnl": 3104.3140922185867,
-   "mean_years": 1.2657063617840163
+   "share": 0.3115,
+   "mean_pnl": 283.2524797987605,
+   "p5_pnl": -3498.2384019330248,
+   "p95_pnl": 4210.245700563072,
+   "mean_years": 1.2719750821676985
   },
   {
    "outcome": "other failure",
-   "share": 0.01515,
-   "mean_pnl": -145.59299387871843,
-   "p5_pnl": -2948.576305626016,
-   "p95_pnl": 2039.9394830768283,
-   "mean_years": 0.7032060348892032
+   "share": 0.01395,
+   "mean_pnl": -95.32998485526923,
+   "p5_pnl": -3191.699746073054,
+   "p95_pnl": 2162.2802535817787,
+   "mean_years": 0.6837202025374067
   },
   {
    "outcome": "liquidated",
-   "share": 0.0057,
-   "mean_pnl": -2866.2008786759775,
-   "p5_pnl": -5345.644279891414,
-   "p95_pnl": 290.7324038596328,
-   "mean_years": 1.0865705931495404
+   "share": 0.00545,
+   "mean_pnl": -2833.4953019051964,
+   "p5_pnl": -5563.404382257992,
+   "p95_pnl": 292.57347639864753,
+   "mean_years": 1.1056138051550894
   }
  ],
  "mc_optimistic": {
   "n_paths": 20000,
-  "p_complete_input": 0.479277,
-  "mean_pnl": 311.44001524569813,
-  "median_pnl": 403.97763594651633,
-  "std_pnl": 1699.8833522347359,
-  "p_loss": 0.23055,
-  "var95": 2039.9161913236912,
-  "es95": 3639.466142542867,
+  "p_complete_input": 0.4752066811499999,
+  "mean_pnl": 327.81189864007354,
+  "median_pnl": 404.12067279191433,
+  "std_pnl": 1707.0555410094948,
+  "financing_rate": 0.04603990417522245,
+  "mean_pnl_net_of_financing": 221.8694937542831,
+  "p_loss": 0.2274,
+  "var95": 2011.9657513279985,
+  "es95": 3615.70948821613,
   "p_liquidation": 0.0051,
-  "mean_roe": 0.03114400152456981,
-  "mean_years": 1.1814696428571427,
-  "mean_annualized_roe": 0.032620311076192975,
-  "roe_per_year_of_expected": 0.026360390817367435,
-  "median_max_drawdown": 0.04696189207219918,
-  "p95_max_drawdown": 0.2455909443004652
+  "mean_roe": 0.03278118986400735,
+  "mean_years": 1.1809716269841268,
+  "mean_annualized_roe": 0.03393734564841086,
+  "roe_per_year_of_expected": 0.027757813240375122,
+  "median_max_drawdown": 0.04695373802736765,
+  "p95_max_drawdown": 0.24343319416722234
  },
  "mc_stress": {
   "n_paths": 20000,
-  "p_complete_input": 0.479277,
-  "mean_pnl": -218.35986988045852,
-  "median_pnl": 399.2264039917259,
-  "std_pnl": 1618.5173301973712,
-  "p_loss": 0.35575,
-  "var95": 3093.9412392582312,
-  "es95": 4969.330203756441,
-  "p_liquidation": 0.00505,
-  "mean_roe": -0.02183598698804585,
-  "mean_years": 1.1848095238095238,
-  "mean_annualized_roe": -0.0335650482381458,
-  "roe_per_year_of_expected": -0.018429955658894857,
-  "median_max_drawdown": 0.053165618336926845,
-  "p95_max_drawdown": 0.3273049015647994
+  "p_complete_input": 0.4752066811499999,
+  "mean_pnl": -209.0490875337191,
+  "median_pnl": 399.39614686090874,
+  "std_pnl": 1621.4244816077178,
+  "financing_rate": 0.04603990417522245,
+  "mean_pnl_net_of_financing": -315.3111121710919,
+  "p_loss": 0.3533,
+  "var95": 3100.154387309329,
+  "es95": 4964.555033738165,
+  "p_liquidation": 0.0051,
+  "mean_roe": -0.02090490875337191,
+  "mean_years": 1.1845345238095237,
+  "mean_annualized_roe": -0.03273157696979425,
+  "roe_per_year_of_expected": -0.017648205546716065,
+  "median_max_drawdown": 0.05291780550941222,
+  "p95_max_drawdown": 0.326843597603231
+ },
+ "mc_v1_base": {
+  "n_paths": 20000,
+  "p_complete_input": 0.4752066811499999,
+  "mean_pnl": 131.06824816547396,
+  "median_pnl": 402.6008784265855,
+  "std_pnl": 1606.3888723320406,
+  "financing_rate": 0.04603990417522245,
+  "mean_pnl_net_of_financing": 24.932366267949917,
+  "p_loss": 0.27115,
+  "var95": 2324.3187865915315,
+  "es95": 3980.393674573758,
+  "p_liquidation": 0.00575,
+  "mean_roe": 0.013106824816547393,
+  "mean_years": 1.183128373015873,
+  "mean_annualized_roe": 0.006993622929973708,
+  "roe_per_year_of_expected": 0.011078108779639207,
+  "median_max_drawdown": 0.04831140139147927,
+  "p95_max_drawdown": 0.2626635578926417
  },
  "mc_stress_by_outcome": [
   {
    "outcome": "complete",
-   "share": 0.4766,
-   "mean_pnl": 403.78641615633654,
-   "p5_pnl": 393.32770668520834,
-   "p95_pnl": 410.0135345882548,
-   "mean_years": 1.3734962931878585
+   "share": 0.47215,
+   "mean_pnl": 403.78937008514816,
+   "p5_pnl": 393.31968007618826,
+   "p95_pnl": 410.01318733620076,
+   "mean_years": 1.373419716292744
   },
   {
    "outcome": "vote failure",
@@ -1362,177 +1607,228 @@
   },
   {
    "outcome": "regulatory failure",
-   "share": 0.3159,
-   "mean_pnl": -706.9588254105006,
-   "p5_pnl": -4604.068214812157,
-   "p95_pnl": 2028.3354987384573,
-   "mean_years": 1.2597994141204016
+   "share": 0.32045,
+   "mean_pnl": -661.9988260009214,
+   "p5_pnl": -4563.663368207553,
+   "p95_pnl": 2073.715353352777,
+   "mean_years": 1.2602305289932065
   },
   {
    "outcome": "other failure",
-   "share": 0.01595,
-   "mean_pnl": -863.6347616124857,
-   "p5_pnl": -3468.567760995809,
-   "p95_pnl": 1110.6835396692543,
-   "mean_years": 0.7074438970990694
+   "share": 0.0158,
+   "mean_pnl": -868.3688515334109,
+   "p5_pnl": -3484.1443761615874,
+   "p95_pnl": 1118.2051703419208,
+   "mean_years": 0.7099909584086799
   },
   {
    "outcome": "liquidated",
-   "share": 0.00505,
-   "mean_pnl": -2696.898698226747,
-   "p5_pnl": -5114.775253479883,
-   "p95_pnl": 288.0769584506889,
-   "mean_years": 1.0615275813295617
+   "share": 0.0051,
+   "mean_pnl": -2697.7680340336087,
+   "p5_pnl": -5114.437693849403,
+   "p95_pnl": 288.07359206727915,
+   "mean_years": 1.0646202925614692
   }
  ],
  "mc_vol_sensitivity": [
   {
    "standalone_vol": "5y realised",
    "vol": 0.6547431407169662,
-   "mean_pnl": 136.12548428305084,
-   "p_loss": 0.2448,
-   "var95": 2199.989516308245,
-   "es95": 3814.762813722465,
-   "p_liquidation": 0.0062
+   "mean_pnl": 286.98546133301284,
+   "p_loss": 0.2103,
+   "var95": 2049.9540066898376,
+   "es95": 3869.3205846683254,
+   "p_liquidation": 0.0059
   },
   {
    "standalone_vol": "2y realised (base)",
    "vol": 0.846615832252667,
-   "mean_pnl": 135.4434117295702,
-   "p_loss": 0.2713,
-   "var95": 2291.079929215765,
-   "es95": 3859.7217394641348,
-   "p_liquidation": 0.0062
+   "mean_pnl": 290.7476188040456,
+   "p_loss": 0.243,
+   "var95": 2156.6884345678022,
+   "es95": 3940.358371296319,
+   "p_liquidation": 0.0059
   },
   {
    "standalone_vol": "1y realised",
    "vol": 0.9848081593543057,
-   "mean_pnl": 135.8946063504015,
-   "p_loss": 0.2937,
-   "var95": 2386.74565217229,
-   "es95": 3938.8534837056227,
-   "p_liquidation": 0.0062
+   "mean_pnl": 295.18895601197806,
+   "p_loss": 0.2687,
+   "var95": 2309.9888431161553,
+   "es95": 4049.0408957325603,
+   "p_liquidation": 0.0059
   }
  ],
  "hedges": [
   {
    "hedge": "ratio-neutral (contract)",
    "short_per_long": 4.5,
-   "mean": 25.631831816981794,
-   "std": 429.8696334469901,
-   "p_loss": 0.27305,
-   "p5": -580.4579933836422,
-   "es95": 1098.857318208693,
-   "mean_if_complete": 100.91732444958366,
-   "mean_if_break": -42.85330981490955
+   "mean": 67.93165172315166,
+   "std": 490.83899875645596,
+   "p_loss": 0.24205,
+   "p5": -552.1424755290706,
+   "es95": 1049.7664549047288,
+   "mean_if_complete": 100.93306082945203,
+   "mean_if_break": 37.566299872654085
   },
   {
    "hedge": "dollar-neutral",
    "short_per_long": 3.70236376073573,
-   "mean": 33.57420502113732,
-   "std": 400.135119799764,
-   "p_loss": 0.30045,
-   "p5": -491.82907594219665,
-   "es95": 896.1784778669985,
-   "mean_if_complete": 101.06280968636472,
-   "mean_if_break": -27.81832211011654
+   "mean": 68.10120570495883,
+   "std": 468.9368926566517,
+   "p_loss": 0.26155,
+   "p5": -456.26673668586153,
+   "es95": 847.9318071386638,
+   "mean_if_complete": 79.06750293845279,
+   "mean_if_break": 58.01086462529235
   },
   {
    "hedge": "variance-minimising",
-   "short_per_long": 3.177717090841064,
-   "mean": 38.79831527027087,
-   "std": 394.26190889576964,
-   "p_loss": 0.43815,
-   "p5": -436.690037414886,
-   "es95": 770.9148689938797,
-   "mean_if_complete": 101.15850286232477,
-   "mean_if_break": -17.929031926281922
+   "short_per_long": 3.2073716358800826,
+   "mean": 68.20642645798013,
+   "std": 465.02360409645325,
+   "p_loss": 0.4355,
+   "p5": -402.7694529753934,
+   "es95": 729.2239542863127,
+   "mean_if_complete": 65.49831133351374,
+   "mean_if_break": 70.69822516697455
   },
   {
    "hedge": "unhedged long target",
    "short_per_long": 0.0,
-   "mean": 70.44007605080269,
-   "std": 568.645633502711,
-   "p_loss": 0.6024,
-   "p5": -381.4702377083146,
-   "es95": 407.45245634722863,
-   "mean_if_complete": 101.73810406476089,
-   "mean_if_break": 41.969120938706865
+   "mean": 68.8882192417439,
+   "std": 605.6731787980875,
+   "p_loss": 0.6062,
+   "p5": -389.32222360069994,
+   "es95": 415.8791451273385,
+   "mean_if_complete": -22.42518904176116,
+   "mean_if_break": 152.90777617234224
   }
  ],
  "hedges_stress": [
   {
    "hedge": "ratio-neutral (contract)",
    "short_per_long": 4.5,
-   "mean": -60.83223219373408,
-   "std": 459.40325601085226,
-   "p_loss": 0.35425,
-   "p5": -776.8590940677259,
-   "es95": 1384.2046493135165,
-   "mean_if_complete": 100.91429677614659,
-   "mean_if_break": -209.30152403298396
+   "mean": -58.62229362408019,
+   "std": 460.55662985611315,
+   "p_loss": 0.3518,
+   "p5": -778.0019465903905,
+   "es95": 1385.3637953719688,
+   "mean_if_complete": 100.91472893274687,
+   "mean_if_break": -202.47411305037963
   },
   {
    "hedge": "dollar-neutral",
    "short_per_long": 3.70236376073573,
-   "mean": -45.19677852826629,
-   "std": 408.0995771697453,
-   "p_loss": 0.3802,
-   "p5": -657.8455310289447,
-   "es95": 1132.3489410408006,
-   "mean_if_complete": 101.73996955917114,
-   "mean_if_break": -180.07197537262294
+   "mean": -57.67929945375144,
+   "std": 401.0001573758452,
+   "p_loss": 0.37845,
+   "p5": -655.0445170489621,
+   "es95": 1133.1465693297876,
+   "mean_if_complete": 71.90645188923078,
+   "mean_if_break": -174.5245671142535
   },
   {
    "hedge": "variance-minimising",
-   "short_per_long": 2.661142727496573,
-   "mean": -24.786518287661142,
-   "std": 381.4153457767452,
-   "p_loss": 0.59305,
-   "p5": -507.67319519683736,
-   "es95": 823.331552496584,
-   "mean_if_complete": 102.81778902867177,
-   "mean_if_break": -141.9162104272793
+   "short_per_long": 2.131966166985328,
+   "mean": -55.82271909404902,
+   "std": 347.1037361418401,
+   "p_loss": 0.7021,
+   "p5": -445.081521906858,
+   "es95": 680.3233769249871,
+   "mean_if_complete": 14.794542693628488,
+   "mean_if_break": -119.49710280922883
   },
   {
    "hedge": "unhedged long target",
    "short_per_long": 0.0,
-   "mean": 27.3778290235244,
-   "std": 531.2092516230914,
-   "p_loss": 0.644,
-   "p5": -391.4776711596842,
-   "es95": 414.7053592692199,
-   "mean_if_complete": 105.57246968844767,
-   "mean_if_break": -44.398072438371024
+   "mean": -53.302232225674416,
+   "std": 441.1205120619919,
+   "p_loss": 0.7149,
+   "p5": -404.60262082352415,
+   "es95": 424.99318422825104,
+   "mean_if_complete": -62.74038134186701,
+   "mean_if_break": -44.792013715751985
   }
  ],
  "signal": {
-  "decision": "NO TRADE",
+  "decision": "WATCH",
   "reasons": [
-   "expected excess return -2.1%/yr is negative at p=48%",
-   "expected P&L is negative under the stress break case (stress: break-even p 69%)"
+   "expected P&L is negative under the stress break case (stress: break-even p 77%)"
   ],
   "metrics": {
    "gross_spread": 0.2154397273772375,
    "spread_usd": 104.94499999999994,
    "implied_value": 592.0649999999999,
    "years_to_close": 1.3497604380561259,
-   "annualized_if_complete": 0.1498632834430158,
-   "completion_pnl_unit": 101.0377330759753,
-   "break_pnl_unit_base": -57.57574320657439,
-   "break_pnl_unit_stress": -222.1067095769178,
-   "breakeven_p_base": 0.3629940188941483,
-   "breakeven_p_stress": 0.6873295042721642,
-   "expected_pnl_unit": 18.444047865697172,
-   "expected_pnl_unit_stress": -67.23101053556718,
+   "annualized_if_complete": 0.14685036067761725,
+   "completion_pnl_unit": 98.9585480759753,
+   "break_pnl_unit_base": 23.490140689047166,
+   "break_pnl_unit_base_nofee": -0.22757158656552745,
+   "break_pnl_unit_base_regulatory": 38.657290983573866,
+   "break_pnl_unit_stress": -202.5473673013051,
+   "reg_break_share": 0.6099471801612097,
+   "breakeven_p_base": 0.0,
+   "breakeven_p_base_gross": 0.0,
+   "breakeven_p_stress": 0.7657980864438588,
+   "expected_pnl_unit": 59.35323209506542,
+   "expected_pnl_unit_stress": -59.269741907774936,
+   "expected_pnl_unit_net": 33.39734638626665,
+   "expected_pnl_unit_stress_net": -85.2256276165737,
+   "financing_cost_complete": 30.271020818793538,
+   "financing_cost_break": 22.04847881034973,
+   "years_to_break": 0.9831239123278092,
    "regt_capital_unit": 539.5925,
-   "expected_return_on_capital": 0.03418143852202759,
-   "expected_annualized": 0.025213504266926368,
-   "expected_excess_annual": -0.02082639990829608,
-   "expected_annualized_stress": -0.09388370203907959,
-   "required_spread_for_hurdle": 0.3526126676797159,
+   "capital_years_unit": 624.4984800542109,
+   "expected_return_on_capital": 0.10999639931071212,
+   "expected_annualized": 0.08038237780340296,
+   "expected_excess_annual": 0.053478667207272505,
+   "expected_excess_annual_stress": -0.13647051248095193,
+   "expected_annualized_stress": -0.08259374475743386,
+   "required_spread_for_hurdle": 0.2104515613713065,
+   "max_borrow_fee_for_hurdle": 0.006888151946420626,
+   "edge": 0.4752066811499999
+  }
+ },
+ "signal_pessimistic": {
+  "decision": "NO TRADE",
+  "reasons": [
+   "expected excess return -3.2%/yr (after financing the long) is negative at p=48%",
+   "probability edge -12% (p=48% vs break-even 59%) is below 10%",
+   "expected P&L is negative under the stress break case (stress: break-even p 77%)"
+  ],
+  "metrics": {
+   "gross_spread": 0.2154397273772375,
+   "spread_usd": 104.94499999999994,
+   "implied_value": 592.0649999999999,
+   "years_to_close": 1.3497604380561259,
+   "annualized_if_complete": 0.14685036067761725,
+   "completion_pnl_unit": 98.9585480759753,
+   "break_pnl_unit_base": -77.9542887350557,
+   "break_pnl_unit_base_nofee": -101.67200101066838,
+   "break_pnl_unit_base_regulatory": -62.787138440528985,
+   "break_pnl_unit_stress": -202.5473673013051,
+   "reg_break_share": 0.6099471801612097,
+   "breakeven_p_base": 0.5928187372156498,
+   "breakeven_p_base_gross": 0.4406367007631129,
+   "breakeven_p_stress": 0.7657980864438588,
+   "expected_pnl_unit": 6.115873298745882,
+   "expected_pnl_unit_stress": -59.269741907774936,
+   "expected_pnl_unit_net": -19.840012410052893,
+   "expected_pnl_unit_stress_net": -85.2256276165737,
+   "financing_cost_complete": 30.271020818793538,
+   "financing_cost_break": 22.04847881034973,
+   "years_to_break": 0.9831239123278092,
+   "regt_capital_unit": 539.5925,
+   "capital_years_unit": 624.4984800542109,
+   "expected_return_on_capital": 0.011334244450665793,
+   "expected_annualized": 0.008384953632631476,
+   "expected_excess_annual": -0.03176951272696555,
+   "expected_excess_annual_stress": -0.13647051248095193,
+   "expected_annualized_stress": -0.08259374475743386,
+   "required_spread_for_hurdle": 0.3458024175622607,
    "max_borrow_fee_for_hurdle": 0.0,
-   "edge": 0.11628298110585172
+   "edge": -0.1176120560656499
   }
  },
  "iv_acquirer": [

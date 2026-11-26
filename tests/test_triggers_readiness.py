@@ -1,3 +1,5 @@
+import datetime as dt
+
 import pytest
 
 from mergerarb.execution.broker import SimBroker
@@ -7,27 +9,30 @@ from mergerarb.execution.journal import Journal
 from mergerarb.execution import readiness
 from mergerarb.execution.trigger import Rung, evaluate_rung, executable_spread
 
+RTH = dt.datetime(2026, 11, 25, 15, 0, tzinfo=dt.timezone.utc)   # Wed 10:00 ET
+FRESH = dict(quote_age_s=1.0, session_open=True)
+
 
 def test_executable_spread_uses_bid_for_short_and_ask_for_long():
     assert executable_spread(500.0, 140.0, 4.5) == pytest.approx(630.0 / 500.0 - 1)
-    s = evaluate_rung(Rung(0.25, 1), 499.0, 500.0, 140.0, 140.2, 4.5)
+    s = evaluate_rung(Rung(0.25, 1), 499.0, 500.0, 140.0, 140.2, 4.5, **FRESH)
     assert s.executable_spread == pytest.approx(0.26) and s.hit
     assert s.mid_spread > s.executable_spread
     assert s.target_limit >= 500.0 and s.acquirer_limit <= 140.0      # limits at the touch plus slippage
 
 
 def test_rung_not_hit_and_bad_quotes_and_non_live():
-    assert not evaluate_rung(Rung(0.30, 1), 499.0, 500.0, 140.0, 140.2, 4.5).hit
-    bad = evaluate_rung(Rung(0.10, 1), 501.0, 500.0, 140.0, 140.2, 4.5)     # crossed target quote
+    assert not evaluate_rung(Rung(0.30, 1), 499.0, 500.0, 140.0, 140.2, 4.5, **FRESH).hit
+    bad = evaluate_rung(Rung(0.10, 1), 501.0, 500.0, 140.0, 140.2, 4.5, **FRESH)     # crossed target quote
     assert not bad.hit and bad.executable_spread is None
-    stale = evaluate_rung(Rung(0.10, 1), 499.0, 500.0, 140.0, 140.2, 4.5, quotes_live=False)
+    stale = evaluate_rung(Rung(0.10, 1), 499.0, 500.0, 140.0, 140.2, 4.5, quotes_live=False, **FRESH)
     assert not stale.hit and "not live" in stale.note
 
 
 def test_readiness_on_simulator(tmp_path):
     b = SimBroker(quotes={"LITE": {"last": 487.12, "bid": 486.9, "ask": 487.3},
                           "MRVL": {"last": 131.57, "bid": 131.55, "ask": 131.6}})
-    rows = readiness.run(b, ExecutionConfig(journal_path=tmp_path / "j.jsonl"))
+    rows = readiness.run(b, ExecutionConfig(journal_path=tmp_path / "j.jsonl"), now_utc=RTH)
     names = {r[0]: r[1] for r in rows}
     assert names["API connection"] == "PASS" and names["account type"] == "PASS"
     assert names["MRVL shortability"] == "PASS" and names["what-if margin (1 lot)"] == "PASS"
@@ -45,11 +50,12 @@ def test_readiness_flags_live_account_in_paper_mode(tmp_path):
 def test_service_trigger_journal(tmp_path):
     from mergerarb.execution.service import Service
 
-    b = SimBroker(quotes={"LITE": {"last": 480.0, "bid": 479.9, "ask": 480.0},
-                          "MRVL": {"last": 140.0, "bid": 140.0, "ask": 140.1}}, data_type="live")
+    t = RTH - dt.timedelta(seconds=1)
+    b = SimBroker(quotes={"LITE": {"last": 480.0, "bid": 479.9, "ask": 480.0, "time_utc": t},
+                          "MRVL": {"last": 140.0, "bid": 140.0, "ask": 140.1, "time_utc": t}}, data_type="live")
     ex = PairExecutor(b, ExecutionConfig(journal_path=tmp_path / "j.jsonl"), Journal(tmp_path / "j.jsonl"))
     ex.connect()
-    svc = Service(ex)
+    svc = Service(ex, clock=lambda: RTH)
     svc.handle("POST", "/triggers", {"rungs": [{"target_gross_spread": 0.30, "lots": 1},
                                                {"target_gross_spread": 0.40, "lots": 1}]}, {})
     st = svc.handle("GET", "/triggers", {}, {})["status"]

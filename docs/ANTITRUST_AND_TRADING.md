@@ -18,20 +18,21 @@ run `python scripts/run_antitrust.py` (numbers in [`antitrust_numbers.json`](ant
 2. **Gate by gate, completion is about 48%, in line with the market's ~50%.**
    - US 93%, stockholder votes 81%, EU 94%, China 69%, other 97%.
    - The first report's 63% assumed 80% for all regulators together, which is too generous.
-   - **The signal is now NO TRADE**: the expected return is about 2.1% a year below Treasuries at today's spread.
+   - Because the votes come first, 61% of breaks would be regulatory terminations that pay LITE the $3.2bn fee.
 3. **Antitrust worries hit the trade mostly through MRVL, not LITE.**
    - Prices are a probability-weighted mix of "deal" and "no deal" values, and MRVL fell about 21% on the deal.
-   - Bad regulatory news therefore lifts MRVL more than it sinks LITE. LITE can even rise if most of MRVL's deal discount
-     would reverse on a break.
+   - Bad regulatory news therefore lifts MRVL more than it sinks LITE. With three quarters of MRVL's discount reversing
+     on a break (the base case), LITE even *rises* slightly on bad news.
    - The hedged position loses the same dollars either way: **about $21 per LITE share for every 10-point drop in the
      market's completion odds** (the gap G = spread / (1 - q) = $210 at q = 50%).
-4. **To trade it you need a view the market doesn't hold, and patience.**
-   - At today's spread, no regulatory view alone clears a 5% hurdle under the base break case. Even a 95% China view only
-     takes completion to ~73% against the ~81% needed.
-   - The trade works only if you believe LITE would hold about $600 on its own after a break, or if you enter at a wider
-     spread (~35%) after a scare.
-   - In the news-flow simulation with an edge, waiting for a 35% spread earned ~8.6% a year on capital, against ~4.5%
-     for buying today. The rung was hit in about 70% of paths, at an average entry spread of 39%.
+4. **The odds are fairly priced. The edge, if any, is in LITE's break value.** *(Revised after the 2026-11-25 triple check.)*
+   - At our odds the market prices LITE at $494-534 on a break, below its factor-model value of $613 (±15%). If the factor
+     model is right, the trade earns about 5% a year above Treasuries even with no view on the regulators (signal WATCH).
+     If the market is right, it is roughly fair.
+   - In the news-flow simulation, holding from today earned **~9% a year** on capital before financing if LITE trades at
+     its factor value after a break (~5% after financing), and ~0 if the market's break value is right.
+   - Waiting for a 27% spread did about as well (9.3% a year) and helped most if you are also more optimistic on the odds.
+     It hurt if you are more pessimistic.
 
 ## 1. What regulators will look at
 
@@ -79,7 +80,8 @@ the legs depends on how much of MRVL's ~21% deal discount would reverse on a bre
 | A 10-point drop in completion odds (q 50% → 40%) | LITE | MRVL | Gross spread | Hedged P&L per LITE share |
 |---|---|---|---|---|
 | No MRVL reversal | -4.3% | 0.0% | +5.7 pts | -$21 |
-| Half reverses (base) | -1.0% | +2.7% | +4.6 pts | -$21 |
+| Half reverses | -1.0% | +2.7% | +4.6 pts | -$21 |
+| Three quarters reverse (base since 2026-11-25) | +0.6% | +4.0% | +4.1 pts | -$21 |
 | Full reversal | +2.2% | +5.4% | +3.6 pts | -$21 |
 
 *(From `shock_table`; same P&L by construction. Only the split moves.)*
@@ -88,20 +90,29 @@ the legs depends on how much of MRVL's ~21% deal discount would reverse on a bre
 
 ![Headline impacts](figures/antitrust_headlines.png)
 
-Bayesian updates from the base event tree, applied at the market's ~50% odds:
+Bayesian updates from the base event tree, applied at the market's ~50% odds, with three quarters of MRVL's discount
+reversing on a break. Columns:
+- "From today" is the change once the headline is known.
+- "On the day" starts from the news that must come first. A court ruling follows a lawsuit, so a block costs only $45
+  on the day; the other $60 was lost when the suit was filed.
 
-| Headline | Odds now | Odds after | LITE | MRVL | Spread | P&L / LITE sh |
+| Headline | Odds after | LITE | MRVL | Spread | P&L / LITE sh, from today | On the day |
 |---|---|---|---|---|---|---|
-| HSR second request (75% likely, mostly priced) | 50% | 49% | -0.1% | +0.3% | +0.5 pt | -$3 |
-| EU opens phase 2 (40%) | 50% | 45% | -0.5% | +1.3% | +2.2 pts | -$10 |
-| SAMR acceptance delayed / pull-and-refile (5%) | 50% | 36% | -1.4% | +3.7% | +6.3 pts | -$29 |
-| US agency sues (11%) | 50% | 21% | -2.9% | +7.7% | +13.3 pts | -$60 |
-| Any termination (court block, SAMR timeout, failed vote) | 50% | 0% | -5.1% | +13.5% | +23.9 pts | -$105 |
-| Both votes pass (81%) | 50% | 62% | +1.2% | -3.2% | -5.2 pts | +$25 |
-| SAMR conditional approval | 50% | 72% | +2.3% | -6.1% | -9.9 pts | +$47 |
+| HSR second request (75% likely, mostly priced) | 49% | +0.1% | +0.5% | +0.5 pt | -$3 | -$3 |
+| EU opens phase 2 (40%) | 45% | +0.3% | +1.9% | +2.0 pts | -$10 | -$10 |
+| SAMR acceptance delayed / pull-and-refile (5%) | 36% | +0.8% | +5.6% | +5.7 pts | -$29 | -$29 |
+| US agency sues (11%) | 21% | +1.7% | +11.6% | +11.7 pts | -$60 | -$57 |
+| Court blocks the merger (after a suit) | 0% | +3.1% | +20.2% | +20.3 pts | -$105 | -$45 |
+| Court rules for the merger (after a suit) | 54% | -0.2% | -1.5% | -1.5 pts | +$8 | **+$68** |
+| A stockholder vote fails | 0% | +3.1% | +20.2% | +20.3 pts | -$105 | -$105 |
+| Both votes pass (81%) | 62% | -0.7% | -4.7% | -4.9 pts | +$25 | +$25 |
+| SAMR conditional approval | 72% | -1.4% | -9.1% | -9.5 pts | +$47 | +$46 |
 
-With full MRVL reversal the P&L column is identical. MRVL moves twice as much, and LITE *rises* on bad news (+6% on a
-US suit, +11% on a termination).
+The P&L column does not depend on the reversal assumption; only the split between the legs does. With half the discount
+reversing, LITE falls 2.9% on a US suit and MRVL rises 7.7%. With all of it reversing, LITE rises 6%.
+
+Inside SAMR's decision window, a fair price also decays week by week while no decision arrives; the news simulation
+models that. A SAMR timeout is therefore mostly priced before the formal termination.
 
 ## 5. What past antitrust news actually did
 
@@ -132,30 +143,40 @@ US suit, +11% on a termination).
 
 ## 7. Trading playbook
 
-**Today: no trade.** At a 21.5% spread and 48% completion, the expected return on Reg T capital is ~2.5% a year (≈
--2.1% against Treasuries). Under the stress break case it is negative unless completion odds exceed 69%.
+**Today: potentially attractive, small size only (signal WATCH).** *(Revised 2026-11-25 after the triple check; the
+earlier "no trade" left out the regulatory fee and used a pessimistic break value as its base.)*
+- At a 21.5% spread (23.6% at the Nov 25 close) and 48% completion, the base case earns ~5.3% a year above Treasuries on
+  Reg T capital. It needs a 21% spread to clear the 5% hurdle.
+- The base case assumes LITE trades at its factor-model value ($613) on a break and MRVL recovers 3/4 of its discount.
+- With the first version's blended break value ($512) it is -3.2% a year. The stress case needs 77% completion odds.
 
-**Where an edge could come from** (`news_mc`: outcomes drawn from *your* tree, prices from the market's; 20,000 paths;
-one lot = 2 LITE / 9 MRVL):
+**Where an edge could come from** (`news_mc`: outcomes drawn from *your* tree, prices from the market's; your break
+value applied when a break happens; 20,000 paths; one lot = 2 LITE / 9 MRVL):
 
-| Your view (P complete) | Enter today, hold | Exit on US suit / SAMR slip | Wait for ≥ 35% spread | After US clears | After both votes |
+| World | Enter today, hold | Exit on US suit / SAMR slip | Wait for ≥ 27% spread | After US clears | After both votes |
 |---|---|---|---|---|---|
-| Same as market (48%) | +1.0%/yr | +0.6% | +1.4% | +2.1% | +2.6% |
-| More optimistic (60%) | +4.5%/yr | +4.1% | **+8.6%** | +6.2% | +5.9% |
-| More pessimistic (36%) | -2.0%/yr | -2.7% | -5.3% | -2.6% | -3.4% |
+| No edge (your odds and break value = market's) | -0.2%/yr | -0.5% | 0.0% | +0.2% | +0.2% |
+| Your break value (factor model), market's odds | **+9.1%** | +7.8% | +9.3% | +11.5% | +12.1% |
+| ... and more optimistic odds (60%) | +10.4% | +9.0% | **+12.8%** | +13.1% | +13.5% |
+| ... and more pessimistic odds (36%) | +7.8% | +5.9% | +6.1% | +9.1% | +9.5% |
+| Market's break value, more optimistic odds | +3.6% | +3.5% | +6.0% | +4.5% | +3.6% |
 
-*(P&L per unit of capital-time, before the opportunity cost of capital. Treasuries pay ~4.6%. The 35% rung was hit in
-~70% of paths, at an average entry spread of 39%. It also loses the most in the pessimistic world: a wide spread is not
-cheap if the market is right.)*
+How to read the table:
+- Figures are P&L per unit of capital-time, *before* financing the long leg (subtract ~4%).
+- The milestone strategies earn more per year of capital because they hold for a shorter time and trade less often.
+- The 27% rung was hit in 86% of paths, at an average entry spread of 31%.
+- The no-edge row is now about zero. Before the fix, the fee was counted twice and this row showed a profit.
 
-The edge is all in the view, and in an optimistic world it is best harvested by **waiting for a scare to widen the spread
-or for milestones to clear**. A stop on a US lawsuit trims the tail (5% shortfall -8%) but crystallises losses after the
-drop, so it lowered the average in every world.
+The edge comes mainly from the break-value view: with the market's break value, even a 60% completion view earns only
+3.6-6% before financing. A stop on a US lawsuit trims the tail but crystallises losses after the drop, so it lowered the
+average in every world.
 
 **Rules for this account (USD 10k):**
 1. **Entry:**
-   - Arm the trigger ladder at **35%** gross spread: one lot, plus a 40% rung only with ≥ $20k equity
-     (`execution/trigger.py`).
+   - The trigger ladder alerts at **23%** gross executable spread for one lot, and **27%** for a second lot only with
+     ≥ $20k equity (`execution/trigger.py`). The Nov 25 close was 23.6%, but triggers ignore closing prints.
+   - Before adding size, wait for the S-4 (expected early December). Its standalone projections and fairness ranges
+     are the best available check on the $613 break value.
    - Triggers fire only on **live** two-sided quotes, using the *executable* spread (MRVL bid, LITE ask).
    - Every hit still needs pre-flight checks and your typed approval.
 2. **Size:**
@@ -200,7 +221,10 @@ drop, so it lowered the average in every world.
   in Chinese, DSP customer map); Disruption Banking.
 - **Search snippets only:** SAMR precedent coverage, US-China climate (China Briefing, Fortune, CNN, SCMP, The National,
   ECNS), commentary pieces.
-- **Every probability is judgment.** The tree's branch probabilities, the 35% rung and the reversal fraction are
-  parameters; change them in the dashboard's Antitrust tab.
+- **Every probability is judgment.** The tree's branch probabilities, the ladder rungs (23% / 27%), the break value and
+  the reversal fraction are parameters; change them in the dashboard's Antitrust tab.
+- **Corrected 2026-11-25:** the news simulation no longer counts the regulatory fee twice; Marvell's cost of the fee is
+  modelled; the market's odds decay inside SAMR's window while no decision arrives; the headline table separates "from
+  today" from "on the day".
 - **Event study:** small sample (26 events) with uncertain dates for some of them; it is used for direction and
   magnitude, not for calibrating probabilities.

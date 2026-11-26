@@ -29,6 +29,7 @@ class ScenarioSpec:
     break_target_price: float | None = None        # absolute target price on a break
     break_acquirer_multiple: float | None = None   # acquirer price multiple (vs start) right after a break
     fee_cash_per_share: float = 0.0                # reverse termination fee value per target share (break only)
+    acquirer_fee_per_share: float = 0.0            # the same fee's after-tax cost per acquirer share (break only)
     borrow_path: tuple[tuple[dt.date, float], ...] = ()  # step changes in the annual borrow fee
     note: str = ""
 
@@ -138,7 +139,7 @@ def run_scenario(spec: ScenarioSpec, deal: Deal, pos: Position, equity0: float, 
         Lend = deal.exchange_ratio * Mend + deal.cash_per_share   # shares convert; short is covered by delivery
     elif spec.outcome == "break":
         Lend = float(spec.break_target_price) + spec.fee_cash_per_share
-        Mend = M0 * float(spec.break_acquirer_multiple)
+        Mend = M0 * float(spec.break_acquirer_multiple) - spec.acquirer_fee_per_share
         cum_comm += sum(broker.commission(q, p) for q, p in ((pos.target_shares, Lend), (pos.acquirer_short_shares, Mend)))
     elif spec.outcome == "forced_close":
         cum_comm += sum(broker.commission(q, p) for q, p in ((pos.target_shares, Lend), (pos.acquirer_short_shares, Mend)))
@@ -167,13 +168,16 @@ def run_scenario(spec: ScenarioSpec, deal: Deal, pos: Position, equity0: float, 
 
 def default_scenarios(deal: Deal, start: dt.date, L0: float, M0: float, g0: float, standalone_base: float,
                       standalone_stress: float, rebound_base: float, rebound_full: float,
-                      vote_date: dt.date = dt.date(2027, 6, 30), borrow_fee0: float = 0.0032) -> list[ScenarioSpec]:
+                      vote_date: dt.date = dt.date(2027, 6, 30), borrow_fee0: float = 0.0032,
+                      fee_tax_rate: float = 0.21) -> list[ScenarioSpec]:
     """The nine scenarios required by the brief (+ break variants), parameterised by today's market."""
     close = deal.expected_close
     fod = deal.final_outside_date
     d3 = close + dt.timedelta(days=91)
     d6 = close + dt.timedelta(days=183)
-    fee = deal.regulatory_fee_per_target_share()
+    fee = deal.regulatory_fee_per_target_share() * (1 - fee_tax_rate)          # after tax, received by the target
+    fee_acq = deal.regulatory_fee_per_acquirer_share() * (1 - fee_tax_rate)    # after tax, paid by the acquirer
+    frac = rebound_base / rebound_full if rebound_full else 0.0
     s = []
     s.append(ScenarioSpec("1_on_schedule", f"Closes on schedule ({close})", close, "complete",
                           ((start, 1.0, g0), (close, 1.0, 0.0))))
@@ -188,8 +192,8 @@ def default_scenarios(deal: Deal, start: dt.date, L0: float, M0: float, g0: floa
                           break_target_price=deal.unaffected_target,
                           break_acquirer_multiple=deal.unaffected_acquirer / M0,
                           note="literal reading of the brief: LITE to $913.95 AND MRVL to $251.65"))
-    s.append(ScenarioSpec("4b_break_model", "Fails at the votes; LITE to factor-model standalone, MRVL recovers half "
-                          "its deal discount", vote_date, "break",
+    s.append(ScenarioSpec("4b_break_model", f"Fails at the votes; LITE to factor-model standalone, MRVL recovers "
+                          f"{frac:.0%} of its deal discount", vote_date, "break",
                           ((start, 1.0, g0), (vote_date, 1.0, max(g0, 0.30))),
                           break_target_price=standalone_base, break_acquirer_multiple=1 + rebound_base))
     s.append(ScenarioSpec("4c_break_stress", "Fails at the votes; LITE trades like the worst optical peer, MRVL "
@@ -197,10 +201,10 @@ def default_scenarios(deal: Deal, start: dt.date, L0: float, M0: float, g0: floa
                           ((start, 1.0, g0), (vote_date, 1.0, max(g0, 0.30))),
                           break_target_price=standalone_stress, break_acquirer_multiple=1 + rebound_full))
     s.append(ScenarioSpec("4d_break_regulatory", f"Regulatory failure at the final outside date ({fod}); stress "
-                          f"standalone + USD 3.2bn fee (~${fee:.0f}/sh)", fod, "break",
-                          ((start, 1.0, g0), (fod - dt.timedelta(days=1), 1.0, max(g0, 0.30))),
+                          f"standalone + USD 3.2bn fee (~${fee:.0f}/sh after tax; MRVL pays ~${fee_acq:.2f}/sh)", fod,
+                          "break", ((start, 1.0, g0), (fod - dt.timedelta(days=1), 1.0, max(g0, 0.30))),
                           break_target_price=standalone_stress, break_acquirer_multiple=1 + rebound_full,
-                          fee_cash_per_share=fee))
+                          fee_cash_per_share=fee, acquirer_fee_per_share=fee_acq))
     mid = start + dt.timedelta(days=183)
     s.append(ScenarioSpec("5_mrvl_down40", "MRVL falls 40% over 6 months; deal closes on schedule", close, "complete",
                           ((start, 1.0, g0), (mid, 0.6, g0), (close, 0.6, 0.0))))
@@ -208,7 +212,9 @@ def default_scenarios(deal: Deal, start: dt.date, L0: float, M0: float, g0: floa
     s.append(ScenarioSpec("6_mrvl_up60_lite_lags", "MRVL +60% in 3 months while LITE lags (spread to 35%); closes on "
                           "schedule", close, "complete", ((start, 1.0, g0), (q, 1.6, 0.35), (close, 1.6, 0.0))))
     s.append(ScenarioSpec("7_both_down40", "Both fall 40% (spread % unchanged); closes on schedule", close, "complete",
-                          ((start, 1.0, g0), (mid, 0.6, g0), (close, 0.6, 0.0))))
+                          ((start, 1.0, g0), (mid, 0.6, g0), (close, 0.6, 0.0)),
+                          note="same path as scenario 5 by construction: with a fixed-ratio hedge only the spread path "
+                               "matters, not which stock 'caused' the price level"))
     s.append(ScenarioSpec("8_borrow_5pct", "MRVL borrow fee rises to 5% from 2027-01-01; closes on schedule", close,
                           "complete", ((start, 1.0, g0), (close, 1.0, 0.0)),
                           borrow_path=((dt.date(2027, 1, 1), 0.05),)))

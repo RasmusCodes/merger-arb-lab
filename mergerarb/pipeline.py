@@ -19,6 +19,7 @@ from .analytics import scenarios as sc
 from .analytics import signal as sg
 from .analytics import spread as sp
 from .analytics import standalone as sa
+from .analytics.antitrust import RegTree
 from .analytics.carry import BrokerTerms, carry
 from .data import options as op
 from .data import quotes as qt
@@ -26,6 +27,8 @@ from .data import yahoo
 from .deal import Deal, load_deal
 
 PEERS = ["SMH", "COHR", "AAOI", "FN", "CIEN", "CRDO", "SOXX", "NVDA", "AVGO", "QQQ"]
+_TREE = RegTree()
+P_REG_FAIL_TREE = 1 - _TREE.p_us() * _TREE.p_eu() * _TREE.p_samr()   # 0.3952 with the base gates
 
 
 @dataclasses.dataclass
@@ -35,9 +38,19 @@ class Inputs:
     shortable_shares: float | None = 10_000_000
     p_acq_vote_fail: float = 0.10
     p_tgt_vote_fail: float = 0.10
-    p_reg_fail: float = 0.39                 # = 1 - US 0.93 x EU 0.94 x SAMR 0.69 (antitrust.RegTree base)
+    p_reg_fail: float = P_REG_FAIL_TREE      # = 1 - US x EU x SAMR from antitrust.RegTree (base gates)
     p_other_fail: float = 0.03
-    rebound_kappa: float = 0.5
+    # MRVL's deal discount appeared on the leak and announcement days (-22.5% abnormal, flat since), so most of it
+    # should reverse on a break: base 3/4, range 1/2 to all of it (Tapestry reversed all of its drop when the court
+    # blocked Capri). The first version used 1/2.
+    rebound_kappa: float = 0.75
+    kappa_range: tuple[float, float] = (0.5, 1.0)
+    # LITE's break value: the two-factor model is the central estimate; its residual band (~14%) matches how far 49
+    # AI/semi names strayed from the same model in this crash (scripts/crash_crosssection.py: sd 14.7%, no momentum
+    # effect). None = use the factor model's own band.
+    standalone_sigma: float | None = None
+    fee_tax_rate: float = 0.21               # corporate tax on the regulatory fee (deductible for the payer)
+    financing_rate: float | None = None      # opportunity cost of the cash paying for the long; None = Treasury
     stress_standalone_method: str = "worst optical peer"
     expected_close: dt.date | None = None
     vote_date: dt.date = dt.date(2027, 6, 30)
@@ -51,6 +64,12 @@ class Inputs:
     @property
     def p_complete(self) -> float:
         return (1 - self.p_acq_vote_fail) * (1 - self.p_tgt_vote_fail) * (1 - self.p_reg_fail) * (1 - self.p_other_fail)
+
+    @property
+    def reg_break_share(self) -> float:
+        """P(regulatory termination | break): the fee-bearing share of breaks (votes come first; s8.2(d))."""
+        p_reg = (1 - self.p_acq_vote_fail) * (1 - self.p_tgt_vote_fail) * self.p_reg_fail
+        return p_reg / max(1 - self.p_complete, 1e-12)
 
 
 def load_prices(deal: Deal, snapshot=None) -> pd.DataFrame:
@@ -90,74 +109,109 @@ def run(deal: Deal | None = None, inp: Inputs = Inputs(), snapshot=None) -> dict
     # ----- standalone (break) values and deal discount
     tgt_est, acq_est = sa.standalone_table(px, T, A, deal.unaffected_date, as_of)
     out["standalone_target"], out["standalone_acquirer"] = tgt_est, acq_est
-    S_base = next(e for e in tgt_est if e.method.startswith("two-factor")).estimate
+    est2 = next(e for e in tgt_est if e.method.startswith("two-factor"))
+    S_base = est2.estimate
+    S_sigma = inp.standalone_sigma if inp.standalone_sigma is not None else math.log(est2.estimate / est2.low)
     M_cf = next(e for e in acq_est if e.method.startswith("beta to SMH")).estimate
     peer_rets = {p: float(px[p].iloc[-1] / px.loc[:deal.unaffected_date, p].iloc[-1]) for p in ("COHR", "AAOI", "FN", "CIEN")}
     worst = min(peer_rets, key=peer_rets.get)
     S_stress = deal.unaffected_target * peer_rets[worst]
-    S_blend = math.sqrt(S_base * S_stress)       # geometric midpoint: the base case integrates model uncertainty
+    S_blend = math.sqrt(S_base * S_stress)       # the first version's base case (geometric midpoint), kept for reference
     delta = sa.deal_discount(M0, M_cf)
+    j_half = 0.5 * delta / (1 - delta)
     j_base = inp.rebound_kappa * delta / (1 - delta)
     j_full = delta / (1 - delta)
-    out.update(S_base=S_base, S_stress=S_stress, S_blend=S_blend, stress_peer=worst, M_counterfactual=M_cf,
-               deal_discount=delta, rebound_base=j_base, rebound_full=j_full, peer_returns=peer_rets)
+    out.update(S_base=S_base, S_sigma=S_sigma, S_stress=S_stress, S_blend=S_blend, stress_peer=worst,
+               M_counterfactual=M_cf, deal_discount=delta, rebound_half=j_half, rebound_base=j_base,
+               rebound_full=j_full, rebound_kappa=inp.rebound_kappa, kappa_range=inp.kappa_range,
+               peer_returns=peer_rets)
 
-    # ----- carry and per-unit economics
-    fee_ps = deal.regulatory_fee_per_target_share()
+    # ----- carry, fees, costs and per-unit economics
+    fee_ps = deal.regulatory_fee_per_target_share()                 # pre-tax, per LITE share
+    fee_acq_ps = deal.regulatory_fee_per_acquirer_share()           # pre-tax, per MRVL share
+    fee_L = fee_ps * (1 - inp.fee_tax_rate)
+    fee_M = fee_acq_ps * (1 - inp.fee_tax_rate)
+    w_reg = inp.reg_break_share
     cb = carry(deal, 1, R, L0, M0, start, deal.expected_close, inp.borrow_fee, inp.equity, inp.broker)
     out["carry_unit"] = cb
-    C = pr.completion_pnl(V - L0, cb.acquirer_dividends_paid + cb.borrow_fee)
-    CASE_OPT = "optimistic: factor-model standalone, half MRVL discount reverses"
-    CASE_BASE = "base: blended standalone (geometric midpoint), half reversal"
+    lot = mg.exact_lot(R)
+    entry_cost = ((inp.broker.commission(lot, L0) + inp.broker.commission(round(lot * R), M0)) / lot
+                  + (L0 + R * M0) * (inp.broker.half_spread_bps + inp.broker.slippage_bps) / 1e4)
+    C = pr.completion_pnl(V - L0, cb.acquirer_dividends_paid + cb.borrow_fee)   # before trading costs
+    out.update(fee_per_target_share=fee_ps, fee_per_acquirer_share=fee_acq_ps, fee_target_after_tax=fee_L,
+               fee_acquirer_after_tax=fee_M, reg_break_share=w_reg, entry_cost_unit=entry_cost)
+    CASE_OPT = "optimistic: factor-model standalone, half of MRVL's deal discount reverses"
+    CASE_BASE = f"base: factor-model standalone, {inp.rebound_kappa:.0%} of MRVL's deal discount reverses"
+    CASE_PESS = f"pessimistic: blended standalone (first version's base), {inp.rebound_kappa:.0%} reversal"
     CASE_STRESS = f"stress: {worst}-like standalone, full MRVL reversal"
     cases = {
-        CASE_OPT: pr.BreakCase("optimistic", S_base, j_base),
-        "factor-model standalone, full reversal": pr.BreakCase("opt_full", S_base, j_full),
-        CASE_BASE: pr.BreakCase("base", S_blend, j_base),
-        "blended standalone, full reversal": pr.BreakCase("base_full", S_blend, j_full),
-        f"{worst}-like standalone, half reversal": pr.BreakCase("stress_half", S_stress, j_base),
+        CASE_OPT: pr.BreakCase("optimistic", S_base, j_half),
+        CASE_BASE: pr.BreakCase("base", S_base, j_base),
+        "factor-model standalone, full reversal": pr.BreakCase("factor_full", S_base, j_full),
+        CASE_PESS: pr.BreakCase("pessimistic", S_blend, j_base),
+        "blended standalone, half reversal (the first version's base case)": pr.BreakCase("v1_base", S_blend, j_half),
+        f"{worst}-like standalone, half reversal": pr.BreakCase("stress_half", S_stress, j_half),
         CASE_STRESS: pr.BreakCase("stress", S_stress, j_full),
         "literal unaffected prices (LITE 913.95, MRVL 251.65)": pr.BreakCase(
             "unaffected", deal.unaffected_target, deal.unaffected_acquirer / M0 - 1),
-        "regulatory failure: stress standalone + after-tax fee, full reversal": pr.BreakCase(
-            "regulatory", S_stress, j_full, fee_ps * (1 - 0.21)),
     }
-    out["case_names"] = dict(optimistic=CASE_OPT, base=CASE_BASE, stress=CASE_STRESS)
+    out["case_names"] = dict(optimistic=CASE_OPT, base=CASE_BASE, pessimistic=CASE_PESS, stress=CASE_STRESS)
     half = start + (deal.expected_close - start) / 2
     cb_half = carry(deal, 1, R, L0, M0, start, half, inp.borrow_fee, inp.equity, inp.broker)
     carry_b = cb_half.acquirer_dividends_paid + cb_half.borrow_fee
+    rf = op.treasury_rate_fn(op.load_treasury_curve()[1])(years)
+    fin_rate = rf if inp.financing_rate is None else inp.financing_rate
+    out["risk_free"], out["financing_rate"] = rf, fin_rate
+    # expected time to a break (MC timing: votes ~vote_date, regulatory failures spread up to the final outside date)
+    p_vote = 1 - (1 - inp.p_acq_vote_fail) * (1 - inp.p_tgt_vote_fail)
+    t_vote = sp.year_fraction(start, inp.vote_date)
+    t_reg = sp.year_fraction(start, dt.date(2027, 9, 1) + (deal.final_outside_date - dt.date(2027, 9, 1)) / 2)
+    t_other = sp.year_fraction(start, deal.expected_close) / 2
+    p_b = max(1 - inp.p_complete, 1e-12)
+    p_oth = (1 - p_vote) * (1 - inp.p_reg_fail) * inp.p_other_fail
+    t_break = (p_vote * t_vote + (p_b - p_vote - p_oth) * t_reg + p_oth * t_other) / p_b
+    out["years_to_break"] = t_break
+
+    def signal_inputs(p: float, base_case: pr.BreakCase, stress_case: pr.BreakCase, fresh: bool = True,
+                      shortable: bool | None = True) -> sg.SignalInputs:
+        return sg.SignalInputs(L0, M0, start, deal.expected_close, inp.borrow_fee, p, base_case, stress_case,
+                               risk_free=rf, financing_rate=fin_rate, reg_break_share=w_reg, fee_target=fee_L,
+                               fee_acquirer=fee_M, entry_cost_unit=entry_cost, exit_cost_unit_break=entry_cost,
+                               break_years=t_break, shortable=shortable, data_fresh=fresh)
+
     rows = []
     for name, case in cases.items():
-        B = pr.break_pnl(L0, M0, R, case, carry_b)
+        e = sg.economics(deal, signal_inputs(inp.p_complete, case, cases[CASE_STRESS]))
+        B0 = pr.break_pnl(L0, M0, R, case, carry_b)
+        B1 = pr.break_pnl(L0, M0, R, pr.with_regulatory_fee(case, fee_L, fee_M), carry_b)
+        Bm = (1 - w_reg) * B0 + w_reg * B1
         rows.append({"case": name, "target_standalone": case.target_standalone, "acquirer_rebound": case.acquirer_rebound,
-                     "fee_per_share": case.fee_per_share, "break_pnl_unit": B, "break_pnl_pct_of_L": B / L0,
-                     "breakeven_p": pr.breakeven_probability(C, B),
-                     "ev_unit_at_base_p": pr.expected_pnl(inp.p_complete, C, B)})
+                     "break_pnl_unit_vote_or_other": B0, "break_pnl_unit_regulatory": B1, "break_pnl_unit": Bm,
+                     "break_pnl_pct_of_L": Bm / L0, "breakeven_p": pr.breakeven_probability(C, Bm),
+                     "breakeven_p_net": e["p_star"], "ev_unit_at_base_p": pr.expected_pnl(inp.p_complete, C, Bm),
+                     "ev_unit_net_at_base_p": e["ev_net"], "excess_per_year_at_base_p": e["excess"]})
     out["completion_pnl_unit"] = C
     out["break_cases"] = pd.DataFrame(rows)
     out["implied_p_grid"] = pr.implied_probability_grid(
-        L0, M0, R, C, np.round(np.linspace(380, 700, 17), 0), [0.0, 0.05, j_base, 0.20, j_full, 0.35])
+        L0, M0, R, C, np.round(np.linspace(380, 700, 17), 0), [0.0, j_half, j_base, j_full, 0.35],
+        carry_to_break=carry_b, reg_share=w_reg, fee_target=fee_L, fee_acquirer=fee_M)
     out["market_implied_standalone"] = {
-        f"p={p:.0%}, j={j:.0%}": pr.market_implied_standalone(L0, M0, R, p, j, C)
-        for p in (0.5, 0.64, 0.8) for j in (j_base, j_full)}
+        f"p={p:.0%}, j={j:.0%}": pr.market_implied_standalone(L0, M0, R, p, j, C, fee_L, carry_b, w_reg, fee_M)
+        for p in (0.4, round(inp.p_complete, 3), 0.5, 0.64) for j in (j_half, j_base, j_full)}
     out["bottom_up"] = pr.DEFAULT_BOTTOM_UP
 
-    # ----- expected return under a probability grid (base and stress break)
+    # ----- expected excess return under a probability grid (optimistic / base / pessimistic / stress break)
     cap_unit = inp.rules.regt(L0, R * M0)
-    Bo = pr.break_pnl(L0, M0, R, cases[CASE_OPT], carry_b)
-    Bb = pr.break_pnl(L0, M0, R, cases[CASE_BASE], carry_b)
-    Bs = pr.break_pnl(L0, M0, R, cases[CASE_STRESS], carry_b)
-    rf = op.treasury_rate_fn(op.load_treasury_curve()[1])(years)
     grid = []
     for p in np.round(np.arange(0.30, 0.951, 0.05), 2):
-        for nm, B in (("optimistic break", Bo), ("base break", Bb), ("stress break", Bs)):
-            ev = pr.expected_pnl(p, C, B)
-            r_ = ev / cap_unit
+        for nm, key in (("optimistic break", CASE_OPT), ("base break", CASE_BASE),
+                        ("pessimistic break", CASE_PESS), ("stress break", CASE_STRESS)):
+            e = sg.economics(deal, signal_inputs(float(p), cases[key], cases[CASE_STRESS]))
+            r_ = e["ev"] / cap_unit
             ann = (1 + r_) ** (1 / years) - 1 if r_ > -1 else -1
-            grid.append({"p_complete": p, "break_case": nm, "ev_unit": ev, "return_on_regt_capital": r_,
-                         "annualized": ann, "excess_over_rf": ann - rf})
+            grid.append({"p_complete": p, "break_case": nm, "ev_unit": e["ev"], "ev_unit_net": e["ev_net"],
+                         "return_on_regt_capital": r_, "annualized": ann, "excess_over_rf": e["excess"]})
     out["ev_grid"] = pd.DataFrame(grid)
-    out["risk_free"] = rf
 
     # ----- calibration for MC
     curve_date, curve = op.load_treasury_curve()
@@ -194,7 +248,7 @@ def run(deal: Deal | None = None, inp: Inputs = Inputs(), snapshot=None) -> dict
 
     # ----- scenarios
     specs = sc.default_scenarios(deal, start, L0, M0, out["gross_spread"], S_base, S_stress, j_base, j_full,
-                                 inp.vote_date, inp.borrow_fee)
+                                 inp.vote_date, inp.borrow_fee, inp.fee_tax_rate)
     res = [sc.run_scenario(s, deal, pos, inp.equity, L0, M0, start, inp.borrow_fee, inp.rules, inp.broker)
            for s in specs]
     out["scenarios"] = res
@@ -212,21 +266,26 @@ def run(deal: Deal | None = None, inp: Inputs = Inputs(), snapshot=None) -> dict
                         p_tgt_vote_fail=inp.p_tgt_vote_fail, p_reg_fail=inp.p_reg_fail,
                         p_other_fail=inp.p_other_fail, vote_date=inp.vote_date,
                         completion_mode=deal.expected_close, completion_max=deal.final_outside_date,
-                        deal_discount=delta, rebound_kappa=inp.rebound_kappa, fee_per_share=fee_ps,
-                        borrow_fee=inp.borrow_fee)
-    # base = integrated over model uncertainty: standalone log-uniform in [stress, factor model], kappa in [0, 1]
-    cfg_b = dataclasses.replace(cfg_o, standalone0_low=S_stress, standalone0_high=S_base, kappa_low=0.0,
-                                kappa_high=1.0, seed=cfg_o.seed + 2)
+                        deal_discount=delta, rebound_kappa=0.5, fee_per_share=fee_ps, acq_fee_per_share=fee_acq_ps,
+                        fee_haircut=inp.fee_tax_rate, borrow_fee=inp.borrow_fee, financing_rate=fin_rate)
+    # base = integrated over model uncertainty: LITE's starting standalone value lognormal around the factor model
+    # (log-sd = the model's residual band), MRVL's reversal fraction uniform in kappa_range
+    cfg_b = dataclasses.replace(cfg_o, standalone0_sigma=S_sigma, kappa_low=inp.kappa_range[0],
+                                kappa_high=inp.kappa_range[1], seed=cfg_o.seed + 2)
     cfg_s = dataclasses.replace(cfg_o, standalone0=S_stress, rebound_kappa=1.0, seed=cfg_o.seed + 1)
+    # the first version's base (log-uniform between the stress and factor values, kappa 0-1), for comparison
+    cfg_v1 = dataclasses.replace(cfg_o, standalone0_low=S_stress, standalone0_high=S_base, kappa_low=0.0,
+                                 kappa_high=1.0, seed=cfg_o.seed + 2)
     out["mc"] = mc.simulate(deal, pos, inp.equity, L0, M0, start, cfg_b, inp.rules)
     out["mc_optimistic"] = mc.simulate(deal, pos, inp.equity, L0, M0, start, cfg_o, inp.rules)
     out["mc_stress"] = mc.simulate(deal, pos, inp.equity, L0, M0, start, cfg_s, inp.rules)
+    out["mc_v1_base"] = mc.simulate(deal, pos, inp.equity, L0, M0, start, cfg_v1, inp.rules)
     out["hedges"] = mc.hedge_comparison(out["mc"].unit_terminal, L0, M0, R)
     out["hedges_optimistic"] = mc.hedge_comparison(out["mc_optimistic"].unit_terminal, L0, M0, R)
     out["hedges_stress"] = mc.hedge_comparison(out["mc_stress"].unit_terminal, L0, M0, R)
     # tail-based size cap: P&L is ~linear in units at these leverages, so ES scales with size
     es_unit = out["mc"].summary["es95"] / max(units, 1)
-    es_cap_units = int(inp.policy_es_cap * inp.equity // es_unit) if es_unit > 0 else 0
+    es_cap_units = int(inp.policy_es_cap * inp.equity // es_unit) if es_unit > 0 else units   # no tail loss: no cap
     out["sizing"]["es95_per_unit"] = es_unit
     out["sizing"]["es_cap_units"] = es_cap_units
     out["sizing"]["recommended_units"] = min(units, es_cap_units) if inp.units_override is None else units
@@ -244,10 +303,11 @@ def run(deal: Deal | None = None, inp: Inputs = Inputs(), snapshot=None) -> dict
     if yahoo.data_mode() == "sample":
         fresh = False          # synthetic sample data must never produce a TRADE signal
     out["data_mode"] = yahoo.data_mode()
-    si = sg.SignalInputs(L0, M0, start, deal.expected_close, inp.borrow_fee, inp.p_complete,
-                         cases[CASE_BASE], cases[CASE_STRESS], risk_free=rf,
-                         shortable=None if inp.shortable_shares is None else inp.shortable_shares > 0,
-                         data_fresh=fresh)
+    si = signal_inputs(inp.p_complete, cases[CASE_BASE], cases[CASE_STRESS], fresh=fresh,
+                       shortable=None if inp.shortable_shares is None else inp.shortable_shares > 0)
+    out["signal_inputs"] = si
     out["signal"] = sg.evaluate(deal, si)
+    # the same rules under the first version's base break case (with the fee and financing corrections applied)
+    out["signal_pessimistic"] = sg.evaluate(deal, dataclasses.replace(si, base_break=cases[CASE_PESS]))
     out["inputs"] = inp
     return out

@@ -90,7 +90,7 @@ def comparables(comp: pd.DataFrame, current: float, out: pathlib.Path) -> pathli
     return _save(fig, out, "comparables")
 
 
-def implied_p_heatmap(grid: pd.DataFrame, marks: dict, out: pathlib.Path) -> pathlib.Path:
+def implied_p_heatmap(grid: pd.DataFrame, marks: dict, out: pathlib.Path, p_view: float = 0.475) -> pathlib.Path:
     cmap = LinearSegmentedColormap.from_list("blue", BLUE_RAMP)
     fig, ax = plt.subplots(figsize=(7.2, 4.4))
     z = grid.to_numpy(dtype=float)
@@ -102,9 +102,11 @@ def implied_p_heatmap(grid: pd.DataFrame, marks: dict, out: pathlib.Path) -> pat
     ax.set_yticks(ys)
     ax.set_yticklabels([f"${grid.index[i]:.0f}" for i in ys])
     ax.grid(False)
-    cs = ax.contour(np.arange(z.shape[1]), np.arange(z.shape[0]), z, levels=[0.5, 0.63], colors=[SURFACE, INK],
-                    linewidths=[1.2, 1.2])
-    ax.clabel(cs, fmt={0.5: "50%", 0.63: "63%"}, fontsize=8, colors=[SURFACE, INK])
+    lv = sorted({0.25, round(p_view, 3)})
+    cs = ax.contour(np.arange(z.shape[1]), np.arange(z.shape[0]), z, levels=lv, colors=[INK, SURFACE][:len(lv)],
+                    linewidths=[1.2] * len(lv))
+    ax.clabel(cs, fmt={v: (f"our {v:.0%}" if v == round(p_view, 3) else f"{v:.0%}") for v in lv}, fontsize=8,
+              colors=[INK, SURFACE][:len(lv)])
     for name, (S, j) in marks.items():
         xi = np.interp(j, list(grid.columns), range(z.shape[1]))
         yi = np.interp(S, list(grid.index), range(z.shape[0]))
@@ -114,7 +116,7 @@ def implied_p_heatmap(grid: pd.DataFrame, marks: dict, out: pathlib.Path) -> pat
     cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
     cb.ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
     cb.outline.set_visible(False)
-    ax.set_title("Break-even completion probability by break assumption")
+    ax.set_title("Break-even completion probability by break assumption (regulatory fee mixed in)")
     ax.set_xlabel("MRVL jump if the deal breaks (reversal of its deal discount)")
     ax.set_ylabel("LITE price if the deal breaks")
     return _save(fig, out, "implied_p_heatmap")
@@ -123,10 +125,13 @@ def implied_p_heatmap(grid: pd.DataFrame, marks: dict, out: pathlib.Path) -> pat
 def ev_vs_probability(ev: pd.DataFrame, p_market: float, p_bottom_up: float, hurdle: float,
                       out: pathlib.Path) -> pathlib.Path:
     fig, ax = plt.subplots(figsize=(7.6, 3.8))
-    series = [("optimistic break", S3, 5), ("base break", S1, 0), ("stress break", S2, -5)]
-    for name, col, dy in series:
+    series = [("optimistic break", S3, 5, "-"), ("base break", S1, 0, "-"), ("pessimistic break", INK2, 0, "--"),
+              ("stress break", S2, -5, "-")]
+    for name, col, dy, ls in series:
         d = ev[ev.break_case == name].sort_values("p_complete")
-        ax.plot(d.p_complete, d.excess_over_rf, color=col, label=name)
+        if d.empty:
+            continue
+        ax.plot(d.p_complete, d.excess_over_rf, color=col, label=name, linestyle=ls)
         ax.annotate(name.replace(" break", ""), (d.p_complete.iloc[-1], d.excess_over_rf.iloc[-1]), xytext=(6, dy),
                     textcoords="offset points", color=INK2, fontsize=8.5, va="center")
     ax.axhline(0, color=AXIS, linewidth=1.0)
@@ -138,9 +143,9 @@ def ev_vs_probability(ev: pd.DataFrame, p_market: float, p_bottom_up: float, hur
     _pct(ax)
     _pct(ax, "x")
     ax.set_xlim(0.29, 1.0)
-    ax.set_title("Expected annual return above Treasuries vs completion probability")
+    ax.set_title("Expected annual return after financing the long, vs completion probability")
     ax.set_xlabel("probability the deal closes")
-    ax.set_ylabel("excess return / yr (Reg T capital)")
+    ax.set_ylabel("excess return / yr (Reg T capital-years)")
     ax.legend(loc="lower right", fontsize=8.5)
     return _save(fig, out, "ev_vs_probability")
 

@@ -70,7 +70,8 @@ shares:
   target_common: 93459271            # record date 2026-09-24 (LITE 8-K Item 5.07, filed 2026-11-23)
   target_series_a_preferred: 2876415 # converts 1:1 into LITE common (LITE 8-K 2026-03-02)
   acquirer_common: 877987882         # as of 2026-10-30 (merger agreement s4.2(b))
-  acquirer_series_a_preferred: 2000000  # each convertible into ~10.889 MRVL common (merger agreement s4.2(b))
+  acquirer_series_a_preferred: 2000000  # merger agreement s4.2(c)(i)
+  acquirer_series_a_conversion: 10.889  # MRVL common per Series A preferred share (s4.2(c)(i): "10.8890")
 
 sources:
   merger_agreement: "https://www.sec.gov/Archives/edgar/data/1835632/000119312526442717/d352474dex21.htm"

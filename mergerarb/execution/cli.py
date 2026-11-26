@@ -1,12 +1,14 @@
 """Order-spec export without any broker connection.
 
     python -m mergerarb.execution.cli --target-shares 2 --target-limit 487.00 --acquirer-limit 131.60 --out plan
-writes plan.json and plan.csv (exact 4.5 hedge: SELL 9 MRVL, BUY 2 LITE) and prints the static checks.
+writes plan.json and plan.csv (exact 4.5 hedge: SELL 9 MRVL, BUY 2 LITE) and prints the static checks. Target
+quantities whose hedge is not a whole number of acquirer shares are refused (no rounding).
 """
 from __future__ import annotations
 
 import argparse
 import pathlib
+import sys
 
 from ..deal import load_deal
 from .orders import build_pair_plan, validate_plan
@@ -24,7 +26,10 @@ def main(argv=None) -> None:
     a = ap.parse_args(argv)
     deal = load_deal(a.deal)
     refs = {deal.target.ticker: a.target_ref or a.target_limit, deal.acquirer.ticker: a.acquirer_ref or a.acquirer_limit}
-    plan = build_pair_plan(deal, a.target_shares, a.target_limit, a.acquirer_limit, refs)
+    try:
+        plan = build_pair_plan(deal, a.target_shares, a.target_limit, a.acquirer_limit, refs)
+    except ValueError as e:
+        sys.exit(f"refused: {e}")
     out = pathlib.Path(a.out)
     out.with_suffix(".json").write_text(plan.to_json(), encoding="utf-8")
     out.with_suffix(".csv").write_text(plan.to_csv(), encoding="utf-8")

@@ -145,31 +145,39 @@ class RegTree:
 
     # ----- news impact: Bayesian update of completion probability for each possible headline
     def news(self) -> pd.DataFrame:
+        """q_before = today's P(complete); q_after = P(complete) once the headline is known, so q_after - q_before is
+        the CUMULATIVE change from today. q_before_event is the probability just before the headline, given the news
+        that must precede it (a court ruling follows a lawsuit; a SAMR decision follows on-time acceptance), so
+        q_after - q_before_event is the move ON THE DAY. (Inside SAMR's decision window the probability also decays
+        week by week while no decision arrives; the news simulation models that, this table does not.)"""
         P = self.p_complete()
         us, eu, samr = self.p_us(), self.p_eu(), self.p_samr()
         rest_us, rest_eu, rest_samr = P / us, P / eu, P / samr
         sr_cont = self.p_us_clear_after_sr + self.p_us_consent_after_sr + self.p_us_sue_after_sr * self.p_court_win
+        after_sr, after_suit = rest_us * sr_cont, rest_us * self.p_court_win
+        after_accept = rest_samr * self.p_samr_approve
         ev = [
-            ("HSR expires, no second request", "US", self.p_hsr_clear_initial, rest_us * 1.0),
-            ("HSR second request issued", "US", 1 - self.p_hsr_clear_initial, rest_us * sr_cont),
+            ("HSR expires, no second request", "US", self.p_hsr_clear_initial, rest_us * 1.0, P),
+            ("HSR second request issued", "US", 1 - self.p_hsr_clear_initial, after_sr, P),
             ("US clears after second request (with or without consent decree)", "US",
-             (1 - self.p_hsr_clear_initial) * (self.p_us_clear_after_sr + self.p_us_consent_after_sr), rest_us),
-            ("US agency sues to block", "US", (1 - self.p_hsr_clear_initial) * self.p_us_sue_after_sr,
-             rest_us * self.p_court_win),
-            ("Court rules for the merger", "US", None, rest_us),
-            ("Court blocks the merger", "US", None, 0.0),
-            ("EU clears in phase 1", "EU", self.p_eu_phase1, rest_eu),
-            ("EU opens phase 2", "EU", 1 - self.p_eu_phase1, rest_eu * self.p_eu_phase2_clear),
-            ("SAMR accepts filing on time", "China", self.p_samr_accept, rest_samr * self.p_samr_approve),
+             (1 - self.p_hsr_clear_initial) * (self.p_us_clear_after_sr + self.p_us_consent_after_sr), rest_us,
+             after_sr),
+            ("US agency sues to block", "US", (1 - self.p_hsr_clear_initial) * self.p_us_sue_after_sr, after_suit,
+             after_sr),
+            ("Court rules for the merger", "US", None, rest_us, after_suit),
+            ("Court blocks the merger", "US", None, 0.0, after_suit),
+            ("EU clears in phase 1", "EU", self.p_eu_phase1, rest_eu, P),
+            ("EU opens phase 2", "EU", 1 - self.p_eu_phase1, rest_eu * self.p_eu_phase2_clear, P),
+            ("SAMR accepts filing on time", "China", self.p_samr_accept, after_accept, P),
             ("SAMR acceptance delayed / pull-and-refile", "China", 1 - self.p_samr_accept,
-             rest_samr * self.p_samr_approve_if_late_accept),
-            ("SAMR approves (conditional)", "China", None, rest_samr),
-            ("SAMR no decision by outside date -> termination", "China", None, 0.0),
-            ("Both stockholder votes pass", "Votes", self.p_votes_pass, P / self.p_votes_pass),
-            ("A stockholder vote fails", "Votes", 1 - self.p_votes_pass, 0.0),
+             rest_samr * self.p_samr_approve_if_late_accept, P),
+            ("SAMR approves (conditional)", "China", None, rest_samr, after_accept),
+            ("SAMR no decision by outside date -> termination", "China", None, 0.0, after_accept),
+            ("Both stockholder votes pass", "Votes", self.p_votes_pass, P / self.p_votes_pass, P),
+            ("A stockholder vote fails", "Votes", 1 - self.p_votes_pass, 0.0, P),
         ]
         return pd.DataFrame([{"headline": h, "jurisdiction": j, "p_event": pe, "q_before": P, "q_after": qa,
-                              "dq": qa - P} for h, j, pe, qa in ev])
+                              "dq": qa - P, "q_before_event": qb, "dq_day": qa - qb} for h, j, pe, qa, qb in ev])
 
 
 def news_impact(tree: RegTree, L: float, M: float, R: float, acq_break_move: float,
@@ -184,9 +192,16 @@ def news_impact(tree: RegTree, L: float, M: float, R: float, acq_break_move: flo
         rel = r.q_after / r.q_before if r.q_before > 0 else 0.0   # relative update applied at the market's q level
         dq = min(q0 * rel, 1.0) - q0
         s = st.shock(dq)
+        # on the day: start from the state just before the headline (same state values, market q scaled the same way)
+        qb = min(q0 * (r.q_before_event / r.q_before), 1.0) if r.q_before > 0 else q0
+        stb = TwoState(st.L + (qb - q0) * (R * st.M_C - st.S), st.M + (qb - q0) * (st.M_C - st.M_B), R, qb, st.S,
+                       st.M_B, st.M_C)
+        sd = stb.shock(min(q0 * rel, 1.0) - qb)
         rows.append({**r.to_dict(), "market_q_after": q0 + s["dq"], "tgt_move": s["tgt_move"], "acq_move": s["acq_move"],
                      "spread_pts": s["spread_pts"], "gross_spread_after": s["gross_spread"],
-                     "arb_pnl_unit": s["arb_pnl_unit"]})
+                     "arb_pnl_unit": s["arb_pnl_unit"], "market_q_before_event": qb, "tgt_move_day": sd["tgt_move"],
+                     "acq_move_day": sd["acq_move"], "spread_pts_day": sd["spread_pts"],
+                     "arb_pnl_unit_day": sd["arb_pnl_unit"]})
     return pd.DataFrame(rows)
 
 
@@ -200,10 +215,15 @@ class NewsMCConfig:
     acq_vol: float = 0.71
     standalone_vol: float = 0.85
     rho: float = 0.55
-    acq_break_move: float = 0.135         # M_B / M - 1 today
-    regulatory_fee_ps: float = 26.2       # after tax, per target share, on a regulatory failure
+    acq_break_move: float = 0.2024        # M_B / M - 1 today (3/4 of MRVL's 21% deal discount reverses)
+    regulatory_fee_ps: float = 26.2       # after tax, per target share, received on a regulatory failure
+    acq_fee_ps: float = 2.81              # after tax, per acquirer share, paid on a regulatory failure
     borrow_fee: float = 0.0032
     div_per_quarter_unit: float = 0.27    # R x MRVL dividend
+    # YOUR break values, if they differ from the market's (the market's are backed out of today's prices): on a break
+    # the target goes to your standalone path (+ fee) and the acquirer to your rebound. None = agree with the market.
+    you_standalone0: float | None = None
+    you_acq_break_move: float | None = None
 
 
 def _simulate_tree(tree: RegTree, rng: np.random.Generator, n: int, start: dt.date):
@@ -243,7 +263,18 @@ def _simulate_tree(tree: RegTree, rng: np.random.Generator, n: int, start: dt.da
             "eu_block": eu_block, "samr_late": samr_late, "samr_fail": samr_fail, "samr_week": samr_week,
             "broke": broke, "break_week": np.where(broke, bw, -1), "break_kind": np.where(broke, kind, -1),
             "complete_week": np.where(broke, -1, complete_week),
-            "W": dict(hsr=W_hsr, sa=W_sa, eu1=W_eu1, v=W_v, us2=W_us2, eu2=W_eu2, ct=W_ct, s1=s1)}
+            "W": dict(hsr=W_hsr, sa=W_sa, eu1=W_eu1, v=W_v, us2=W_us2, eu2=W_eu2, ct=W_ct, s0=s0, s1=s1)}
+
+
+def _fee_share(tree: RegTree, start: dt.date, seed: int, n: int = 200_000) -> tuple[float, float]:
+    """P(fee-bearing regulatory break | break) under ``tree``: unconditionally, and given that the votes passed."""
+    s = _simulate_tree(tree, np.random.default_rng(seed), n, start)
+    reg = np.isin(s["break_kind"], (0, 2, 3))
+    b = s["broke"]
+    bp = b & ~s["votes_fail"]
+    w_pre = float(reg[b].mean()) if b.any() else 0.0
+    w_post = float(reg[bp].mean()) if bp.any() else 0.0
+    return w_pre, w_post
 
 
 def _q_path(tree: RegTree, sim: dict, n: int, weeks: int) -> np.ndarray:
@@ -266,7 +297,12 @@ def _q_path(tree: RegTree, sim: dict, n: int, weeks: int) -> np.ndarray:
     eu = np.where((t >= W["eu2"]) & p2, np.where(sim["eu_block"][:, None], 0.0, 1.0), eu)
     sa = np.full((n, weeks + 1), sa0)
     late = sim["samr_late"][:, None]
-    sa = np.where(t >= W["sa"], np.where(late, tree.p_samr_approve_if_late_accept, tree.p_samr_approve), sa)
+    p_ap = np.where(late, tree.p_samr_approve_if_late_accept, tree.p_samr_approve)
+    # approvals arrive uniformly over the decision window [s0, s1]; a failure only shows after s1. So while no decision
+    # has arrived, the chance of approval decays: P(approve | none by t) = p*f / (p*f + 1 - p), f = P(week > t | approve)
+    f = np.clip((W["s1"] - t) / max(W["s1"] - W["s0"] + 1, 1), 0.0, 1.0)
+    haz = p_ap * f / np.maximum(p_ap * f + (1 - p_ap), 1e-12)
+    sa = np.where(t >= W["sa"], haz, sa)
     sw = sim["samr_week"][:, None]
     sa = np.where(t >= sw, np.where(sim["samr_fail"][:, None], 0.0, 1.0), sa)
     vt = np.where(t >= W["v"], np.where(sim["votes_fail"][:, None], 0.0, 1.0), v0)
@@ -297,14 +333,28 @@ def news_mc(you: RegTree, market: RegTree, L0: float, M0: float, R: float, start
     z2 = cfg.rho * z1 + math.sqrt(1 - cfg.rho ** 2) * rng.standard_normal((n, Wk))
     gM = np.concatenate([np.zeros((n, 1)), np.cumsum(-0.5 * cfg.acq_vol ** 2 * dt_ + cfg.acq_vol * math.sqrt(dt_) * z1, 1)], 1)
     gS = np.concatenate([np.zeros((n, 1)), np.cumsum(-0.5 * cfg.standalone_vol ** 2 * dt_ + cfg.standalone_vol * math.sqrt(dt_) * z2, 1)], 1)
-    MB = st0.M_B * np.exp(gM)
+    # Marvell owes the USD 3.2bn regulatory fee on a regulatory failure (court block, EU block, SAMR timeout); not on a
+    # failed vote or an "other" termination (merger agreement s8.2(d)). The break values backed out of today's prices
+    # (st0.S, st0.M_B) are the market's AVERAGE over break types, so they already contain the expected fee: split it
+    # out (w = the market's P(fee-bearing break | break), before and after the votes) and add the actual fee only when
+    # a regulatory break happens. Without this the fee was counted twice and a no-edge world showed a profit.
+    w_pre, w_post = _fee_share(market, start, cfg.seed + 7)
+    t_w = np.arange(Wk + 1)[None, :]
+    votes_in = (t_w >= sim["W"]["v"]) & ~sim["votes_fail"][:, None]
+    w_t = np.where(votes_in, w_post, w_pre)
+    after = sim["broke"][:, None] & (t_w >= np.maximum(sim["break_week"], 0)[:, None])
+    is_reg = np.isin(sim["break_kind"], (0, 2, 3))[:, None]
+    fee_L = np.where(after, cfg.regulatory_fee_ps * is_reg, w_t * cfg.regulatory_fee_ps)
+    fee_M = np.where(after, cfg.acq_fee_ps * is_reg, w_t * cfg.acq_fee_ps)
+    MB = (st0.M_B + w_pre * cfg.acq_fee_ps) * np.exp(gM)     # ex-fee break value of the acquirer
     MC = st0.M_C * np.exp(gM)            # completion- and break-state acquirer values share the common shocks
-    S = st0.S * np.exp(gS)
-    # Marvell owes the USD 3.2bn regulatory fee on a regulatory failure (court block, EU block, SAMR timeout);
-    # not on a failed vote or an "other" termination (merger agreement s8.2(d))
-    fee = np.where(np.isin(sim["break_kind"], (0, 2, 3)), cfg.regulatory_fee_ps, 0.0)[:, None]
-    M = qm * MC + (1 - qm) * MB
-    L = qm * R * MC + (1 - qm) * (S + fee * (np.arange(Wk + 1)[None, :] >= np.maximum(sim["break_week"], 0)[:, None]))
+    S = (st0.S - w_pre * cfg.regulatory_fee_ps) * np.exp(gS)  # ex-fee break value of the target
+    M = qm * MC + (1 - qm) * (MB - fee_M)
+    L = qm * R * MC + (1 - qm) * (S + fee_L)
+    if cfg.you_standalone0 is not None:          # after a break, prices are YOUR break values (if you are right)
+        L = np.where(after, cfg.you_standalone0 * np.exp(gS) + fee_L, L)
+    if cfg.you_acq_break_move is not None:
+        M = np.where(after, M0 * (1 + cfg.you_acq_break_move) * np.exp(gM) - fee_M, M)
     gross = R * M / L - 1
     strategies = strategies or default_strategies()
     out = {"q_market_path_mean": qm.mean(0), "gross_spread_pct": np.percentile(gross, [5, 25, 50, 75, 95], axis=0),

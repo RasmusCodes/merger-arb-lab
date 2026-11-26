@@ -13,8 +13,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 FIG = ROOT / "docs" / "figures"
 NEG, POS = "#e34948", C.S1
 
-# 1. headline impacts (base tree, market q 50%, half of MRVL's deal discount reverses on a break)
-ni = pd.read_csv(ROOT / "outputs" / "antitrust_news_impact_j135.csv")
+# 1. headline impacts (base tree, market q 50%, three quarters of MRVL's deal discount reverses on a break)
+ni = pd.read_csv(ROOT / "outputs" / "antitrust_news_impact_j202.csv")
 keep = ["US agency sues to block", "SAMR acceptance delayed / pull-and-refile", "EU opens phase 2",
         "HSR second request issued", "SAMR accepts filing on time", "EU clears in phase 1",
         "HSR expires, no second request", "Both stockholder votes pass", "SAMR approves (conditional)",
@@ -31,7 +31,7 @@ ax.axvline(0, color=C.AXIS, linewidth=1)
 ax.set_xlim(-120, 230)
 ax.grid(axis="y", visible=False)
 ax.set_title("What each regulatory headline does to the trade (per LITE share hedged with 4.5 MRVL)")
-ax.set_xlabel("arb P&L per LITE share, USD (market odds 50%, half of MRVL's deal discount reverses on a break)")
+ax.set_xlabel("arb P&L per LITE share, USD, change from today (market odds 50%, 3/4 of MRVL's deal discount reverses)")
 C._save(fig, FIG, "antitrust_headlines")
 
 # 2. event study: spread change around past antitrust news

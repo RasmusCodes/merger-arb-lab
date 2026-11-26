@@ -23,10 +23,9 @@ comp = pd.read_csv(ROOT / "data" / "derived" / "comparables" / "comparables_summ
 charts.comparables(comp, res["gross_spread"], FIG)
 cn = res["case_names"]
 bc = res["break_cases"].set_index("case")
-marks = {"optimistic": (bc.loc[cn["optimistic"], "target_standalone"], bc.loc[cn["optimistic"], "acquirer_rebound"]),
-         "base": (bc.loc[cn["base"], "target_standalone"], bc.loc[cn["base"], "acquirer_rebound"]),
-         "stress": (bc.loc[cn["stress"], "target_standalone"], bc.loc[cn["stress"], "acquirer_rebound"])}
-charts.implied_p_heatmap(res["implied_p_grid"], marks, FIG)
+marks = {k: (bc.loc[cn[k], "target_standalone"], bc.loc[cn[k], "acquirer_rebound"])
+         for k in ("optimistic", "base", "pessimistic", "stress")}
+charts.implied_p_heatmap(res["implied_p_grid"], marks, FIG, res["inputs"].p_complete)
 charts.ev_vs_probability(res["ev_grid"], 0.50, res["inputs"].p_complete, 0.05, FIG)
 charts.mc_distribution(res["mc"].pnl, res["mc_stress"].pnl, res["inputs"].equity, FIG)
 charts.scenarios(res["scenario_table"], FIG, res["inputs"].equity)
@@ -52,9 +51,14 @@ num = {
     "as_of": str(res["as_of"].date()), "L0": L0, "M0": M0, "implied_value": res["implied_value"],
     "spread_usd": res["spread_usd"], "gross_spread": res["gross_spread"], "years_to_close": res["years_to_close"],
     "annualized_if_complete": res["annualized_if_complete"], "spread_stats": res["spread_stats"].__dict__,
-    "S_base": res["S_base"], "S_blend": res["S_blend"], "S_stress": res["S_stress"], "stress_peer": res["stress_peer"],
-    "M_counterfactual": res["M_counterfactual"], "deal_discount": res["deal_discount"],
-    "rebound_base": res["rebound_base"], "rebound_full": res["rebound_full"], "peer_returns": res["peer_returns"],
+    "S_base": res["S_base"], "S_sigma": res["S_sigma"], "S_blend": res["S_blend"], "S_stress": res["S_stress"],
+    "stress_peer": res["stress_peer"], "M_counterfactual": res["M_counterfactual"], "deal_discount": res["deal_discount"],
+    "rebound_half": res["rebound_half"], "rebound_base": res["rebound_base"], "rebound_full": res["rebound_full"],
+    "rebound_kappa": res["rebound_kappa"], "kappa_range": res["kappa_range"], "peer_returns": res["peer_returns"],
+    "p_complete": res["inputs"].p_complete, "reg_break_share": res["reg_break_share"],
+    "fee_target_after_tax": res["fee_target_after_tax"], "fee_acquirer_after_tax": res["fee_acquirer_after_tax"],
+    "entry_cost_unit": res["entry_cost_unit"], "years_to_break": res["years_to_break"],
+    "financing_rate": res["financing_rate"],
     "completion_pnl_unit": res["completion_pnl_unit"], "carry_unit": res["carry_unit"].__dict__,
     "break_cases": res["break_cases"].to_dict(orient="records"),
     "market_implied_standalone": res["market_implied_standalone"],
@@ -68,10 +72,13 @@ num = {
     "max_leverage_position": [res["max_leverage_position"].target_shares, res["max_leverage_position"].acquirer_short_shares],
     "mc": res["mc"].summary, "mc_by_outcome": res["mc"].by_outcome.to_dict(orient="records"),
     "mc_optimistic": res["mc_optimistic"].summary, "mc_stress": res["mc_stress"].summary,
+    "mc_v1_base": res["mc_v1_base"].summary,
     "mc_stress_by_outcome": res["mc_stress"].by_outcome.to_dict(orient="records"),
     "mc_vol_sensitivity": res["mc_vol_sensitivity"].to_dict(orient="records"),
     "hedges": res["hedges"].to_dict(orient="records"), "hedges_stress": res["hedges_stress"].to_dict(orient="records"),
     "signal": {"decision": sig.decision, "reasons": sig.reasons, "metrics": sig.metrics},
+    "signal_pessimistic": {"decision": res["signal_pessimistic"].decision, "reasons": res["signal_pessimistic"].reasons,
+                           "metrics": res["signal_pessimistic"].metrics},
     "iv_acquirer": res["iv_acquirer"].to_dict(orient="records"), "iv_target": res["iv_target"].to_dict(orient="records"),
 }
 (ROOT / "docs").mkdir(exist_ok=True)

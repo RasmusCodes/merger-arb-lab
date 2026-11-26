@@ -104,7 +104,20 @@ class Deal:
         return float(self.shares.get("target_common", 0)) + float(self.shares.get("target_series_a_preferred", 0))
 
     def regulatory_fee_per_target_share(self) -> float:
+        """Pre-tax regulatory reverse termination fee received per target share (fully diluted)."""
         n = self.target_fully_diluted_shares()
+        fee = float(self.termination_fees.get("regulatory_reverse_fee", 0.0))
+        return fee / n if n else 0.0
+
+    def acquirer_fully_diluted_shares(self) -> float:
+        return (float(self.shares.get("acquirer_common", 0))
+                + float(self.shares.get("acquirer_series_a_preferred", 0))
+                * float(self.shares.get("acquirer_series_a_conversion", 0)))
+
+    def regulatory_fee_per_acquirer_share(self) -> float:
+        """Pre-tax cost of the same fee per acquirer share: the payer's stock should fall by about this much (after tax)
+        on a regulatory termination, which helps a position that is short the acquirer."""
+        n = self.acquirer_fully_diluted_shares()
         fee = float(self.termination_fees.get("regulatory_reverse_fee", 0.0))
         return fee / n if n else 0.0
 

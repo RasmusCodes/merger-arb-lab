@@ -5,7 +5,8 @@
     python -m mergerarb.execution.readiness --sim           # offline dry run of the checks
 
 Checks: API connection, paper vs live account, net liquidation and available funds, market-data type for both legs
-(live / delayed), two-sided quotes, MRVL shortability (tick 46/89), IBKR what-if margin for one 2/9 lot, the trading
+(live / delayed; delayed is a FAIL in live mode), two-sided quotes, MRVL shortability (tick 46/89; unknown is a FAIL),
+IBKR what-if margin for one exact lot (any failure or timeout is a FAIL - 'Read-Only API' blocks what-if), the trading
 session, and the current executable spread. Exit code 0 = ready (warnings allowed), 1 = something blocks trading.
 """
 from __future__ import annotations
@@ -14,64 +15,108 @@ import argparse
 import sys
 
 from ..deal import load_deal
-from .broker import IBKRBroker, SimBroker
+from .broker import READ_ONLY_HINT, IBKRBroker, SimBroker
 from .config import ExecutionConfig
 from .executor import market_session
-from .orders import build_pair_plan
+from .orders import build_pair_plan, exact_lot
 from .trigger import executable_spread
 
 
-def run(broker, cfg: ExecutionConfig, deal_id: str = "mrvl_lite") -> list[tuple[str, str, str]]:
+def run(broker, cfg: ExecutionConfig, deal_id: str = "mrvl_lite", now_utc=None) -> list[tuple[str, str, str]]:
     deal = load_deal(deal_id)
     T, A, R = deal.target.ticker, deal.acquirer.ticker, deal.exchange_ratio
+    lot = exact_lot(R)
     out: list[tuple[str, str, str]] = []
     try:
         broker.connect()
     except Exception as e:  # noqa: BLE001 - report any connection failure plainly
         return [("API connection", "FAIL", f"{e} - is TWS/Gateway running, logged in, API enabled on port "
                                            f"{cfg.effective_port}, 127.0.0.1 trusted?")]
-    out.append(("API connection", "PASS", f"connected on port {cfg.effective_port}"))
-    accts = broker.accounts()
-    acct = cfg.account or (accts[0] if len(accts) == 1 else None)
-    if not acct:
-        out.append(("account", "FAIL", f"several accounts {accts}: pass --account"))
-        return out
-    paper = acct.startswith("DU")
-    out.append(("account type", "PASS" if (paper == (cfg.mode == "paper")) else "FAIL",
-                f"{acct} is a {'paper' if paper else 'LIVE'} account; mode={cfg.mode}"))
-    snap = broker.account_snapshot(acct)
-    out.append(("funds", "PASS" if snap.net_liquidation >= 2000 else "FAIL",
-                f"net liquidation {snap.net_liquidation:,.0f}, available {snap.available_funds:,.0f}, "
-                f"excess liquidity {snap.excess_liquidity:,.0f} (Reg T needs >= 2,000)"))
-    q = {}
-    for s in (T, A):
-        qq = broker.quote(s)
-        q[s] = qq
-        st = "PASS" if qq.data_type == "live" else ("WARN" if qq.data_type in ("delayed", "simulated") else "FAIL")
-        out.append((f"{s} market data", st, f"{qq.data_type}: last {qq.last} bid {qq.bid} ask {qq.ask}"
-                    + ("" if qq.data_type == "live" else " - subscribe to US real-time data (NASDAQ) before live trading")))
-    si = broker.short_info(A)
-    st, msg = si.status(int(round(2 * R)))
-    out.append((f"{A} shortability", st, msg))
-    plan = build_pair_plan(deal, 2, q[T].ask or q[T].last, q[A].bid or q[A].last,
-                           {T: q[T].last, A: q[A].last})
     try:
-        wi = [broker.what_if(leg, acct) for leg in plan.legs]
-        out.append(("what-if margin (1 lot)", "PASS",
-                    "initial +" + f"{sum(w.init_margin_change or 0 for w in wi):,.0f}, maintenance +"
-                    f"{sum(w.maint_margin_change or 0 for w in wi):,.0f}, commission "
-                    f"{sum(w.commission or 0 for w in wi):.2f}"))
-    except Exception as e:  # noqa: BLE001
-        out.append(("what-if margin (1 lot)", "FAIL", str(e)))
-    open_, why = market_session()
-    out.append(("session", "PASS" if open_ else "WARN", why))
-    if q[T].ask and q[A].bid:
-        out.append(("executable spread", "PASS", f"{executable_spread(q[T].ask, q[A].bid, R):.2%} "
-                                                 f"(sell {A} at bid, buy {T} at ask)"))
-    else:
-        out.append(("executable spread", "WARN", "no two-sided quotes (market closed or no data subscription)"))
-    broker.disconnect()
-    return out
+        out.append(("API connection", "PASS", f"connected on port {cfg.effective_port}"))
+        accts = broker.accounts()
+        if cfg.account and cfg.account not in accts:
+            out.append(("account", "FAIL", f"{cfg.account} is not among the managed accounts {accts}"))
+            return out
+        acct = cfg.account or (accts[0] if len(accts) == 1 else None)
+        if not acct:
+            out.append(("account", "FAIL", f"several accounts {accts}: pass --account"))
+            return out
+        paper = acct.startswith("DU")
+        out.append(("account type", "PASS" if (paper == (cfg.mode == "paper")) else "FAIL",
+                    f"{acct} is a {'paper' if paper else 'LIVE'} account; mode={cfg.mode}"))
+        if cfg.mode == "live" and not cfg.live_allowed():
+            out.append(("live switch", "FAIL", "live mode needs MERGERARB_ALLOW_LIVE=1"))
+        snap = None
+        try:
+            snap = broker.account_snapshot(acct)
+            if snap.net_liquidation <= 0:
+                out.append(("funds", "FAIL", "account summary returned no NetLiquidation (non-USD base currency or "
+                                             "summary not loaded?)"))
+            else:
+                out.append(("funds", "PASS" if snap.net_liquidation >= 2000 else "FAIL",
+                            f"net liquidation {snap.net_liquidation:,.0f} {snap.currency}, available "
+                            f"{snap.available_funds:,.0f}, excess liquidity {snap.excess_liquidity:,.0f} "
+                            f"(Reg T needs >= 2,000)"))
+        except Exception as e:  # noqa: BLE001
+            out.append(("funds", "FAIL", f"account summary unavailable: {e}"))
+        q = {}
+        for s in (T, A):
+            try:
+                qq = broker.quote(s)
+            except Exception as e:  # noqa: BLE001
+                out.append((f"{s} market data", "FAIL", f"no quote: {e}"))
+                continue
+            q[s] = qq
+            if not (qq.last or (qq.bid and qq.ask)):
+                out.append((f"{s} market data", "FAIL", f"{qq.data_type}: no bid/ask/last from the broker"))
+                continue
+            if qq.data_type == "live":
+                st = "PASS"
+            elif qq.data_type in ("delayed", "simulated"):
+                st = "FAIL" if cfg.mode == "live" else "WARN"
+            else:
+                st = "FAIL"
+            out.append((f"{s} market data", st, f"{qq.data_type}: last {qq.last} bid {qq.bid} ask {qq.ask}"
+                        + ("" if qq.data_type == "live" else
+                           " - subscribe to US real-time data (NASDAQ) before live trading")))
+        try:
+            si = broker.short_info(A)
+            st, msg = si.status(int(lot * R))
+            out.append((f"{A} shortability", "FAIL" if not si.known else st, msg))
+        except Exception as e:  # noqa: BLE001
+            out.append((f"{A} shortability", "FAIL", f"shortability unavailable: {e}"))
+        tl = (q[T].ask or q[T].last) if T in q else None
+        al = (q[A].bid or q[A].last) if A in q else None
+        if not (tl and al):
+            out.append(("what-if margin (1 lot)", "FAIL", "no prices to price a what-if order"))
+        else:
+            try:
+                plan = build_pair_plan(deal, lot, tl, al, {T: q[T].last or tl, A: q[A].last or al})
+                wi = [broker.what_if(leg, acct) for leg in plan.legs]
+                if any(w is None or w.init_margin_change is None or w.maint_margin_change is None for w in wi):
+                    raise RuntimeError("what-if returned no margin numbers")
+                init = sum(w.init_margin_change for w in wi)
+                enough = snap is None or snap.available_funds >= init
+                out.append(("what-if margin (1 lot)", "PASS" if enough else "FAIL",
+                            f"initial +{init:,.0f}, maintenance +{sum(w.maint_margin_change for w in wi):,.0f}, "
+                            f"commission {sum(w.commission or 0 for w in wi):.2f}"
+                            + ("" if enough else f" - more than the available {snap.available_funds:,.0f}")))
+            except Exception as e:  # noqa: BLE001
+                out.append(("what-if margin (1 lot)", "FAIL", f"{e}. {READ_ONLY_HINT}"))
+        open_, why = market_session(now_utc)
+        out.append(("session", "PASS" if open_ else "WARN", why))
+        if T in q and A in q and q[T].ask and q[A].bid:
+            out.append(("executable spread", "PASS", f"{executable_spread(q[T].ask, q[A].bid, R, deal.cash_per_share):.2%}"
+                                                     f" (sell {A} at bid, buy {T} at ask)"))
+        else:
+            out.append(("executable spread", "WARN", "no two-sided quotes (market closed or no data subscription)"))
+        return out
+    finally:
+        try:
+            broker.disconnect()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def main(argv=None) -> int:

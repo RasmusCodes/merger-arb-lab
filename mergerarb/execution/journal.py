@@ -1,6 +1,7 @@
-"""Append-only JSONL journal of every execution event (submit, modify, cancel, status, fill, error, alert).
+"""Append-only JSONL journal of every execution event (submit, status, fill, error, cancel, alert, approval, ...).
 
-The journal never stores credentials (none are handled by this package: authentication happens in TWS/Gateway)."""
+The service rebuilds unfinished plans from it at start-up. The journal never stores credentials (none are handled by
+this package: authentication happens in TWS/Gateway)."""
 from __future__ import annotations
 
 import datetime as dt
@@ -28,7 +29,18 @@ class Journal:
         lines = self.path.read_text(encoding="utf-8").splitlines()
         if limit:
             lines = lines[-limit:]
-        return [json.loads(x) for x in lines if x.strip()]
+        out = []
+        for x in lines:
+            if not x.strip():
+                continue
+            try:
+                out.append(json.loads(x))
+            except json.JSONDecodeError:      # a line cut short by a crash must not make the journal unreadable
+                continue
+        return out
 
     def submitted_keys(self) -> set[str]:
         return {r.get("idempotency_key") for r in self.read() if r.get("event") == "plan_submitted"}
+
+    def submitted_plan_ids(self) -> set[str]:
+        return {r.get("plan_id") for r in self.read() if r.get("event") == "plan_submitted"}

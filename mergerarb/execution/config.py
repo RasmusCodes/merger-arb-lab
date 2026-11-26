@@ -22,16 +22,22 @@ class ExecutionConfig:
     account: str | None = None             # None -> the single managed account (refuses if several)
     max_order_notional: float = 15_000.0   # per leg, USD
     max_gross_notional: float = 30_000.0   # whole strategy after the trade, USD
-    max_unhedged_usd: float = 1_500.0      # alert threshold for leg imbalance, USD
-    unhedged_timeout_s: float = 60.0       # how long an imbalance may persist before an alert
+    # UNHEDGED alert cap: the lower of this dollar amount and this share of one exact lot's short value
+    # (one MRVL/LITE lot = 9 MRVL short, about $1,180 -> cap about $296), so the alert can fire for a one-lot trade
+    max_unhedged_usd: float = 500.0
+    max_unhedged_lot_fraction: float = 0.25
+    unhedged_timeout_s: float = 60.0       # how long an imbalance may stay above the cap before the alert
     price_band_pct: float = 0.02           # limit prices must sit within +/-2% of the reference price
     max_borrow_fee: float = 0.03           # hard stop above 3%/yr
     min_excess_liquidity_pct: float = 0.50  # post-trade excess liquidity >= 50% of net liquidation
     allow_outside_rth: bool = False
     allow_delayed_data_in_paper: bool = True
-    approval_ttl_s: float = 300.0          # approvals expire after 5 minutes
+    allow_unknown_shortability_in_paper: bool = True   # live mode always needs a shortability reading (tick 46)
+    approval_ttl_s: float = 300.0          # typed approvals (plan and residual) expire after 5 minutes
+    report_ttl_s: float = 300.0            # a pre-flight report older than this cannot be approved
+    request_timeout_s: float = 10.0        # IBKR request timeout (what-if, executions, account summary, ...)
+    max_quote_age_s: float = 15.0          # spread triggers only fire on quotes younger than this
     sequencing: str = "short_first"        # "short_first" | "simultaneous"
-    hedge_policy: str = "alert_only"       # "alert_only" | "auto_within_band" (follow-up orders inside the approved band)
     journal_path: pathlib.Path = ROOT / "data" / "execution" / "journal.jsonl"
 
     @property
@@ -51,8 +57,12 @@ class ExecutionConfig:
             p.append("live mode requested but MERGERARB_ALLOW_LIVE=1 is not set in the environment")
         if self.host not in ("127.0.0.1", "localhost", "::1"):
             p.append("TWS/Gateway host must be local (127.0.0.1); remote API access is not supported")
+        if self.app not in PAPER_PORTS:
+            p.append("app must be 'tws' or 'gateway'")
         if self.sequencing not in ("short_first", "simultaneous"):
             p.append("sequencing must be 'short_first' or 'simultaneous'")
-        if self.hedge_policy not in ("alert_only", "auto_within_band"):
-            p.append("hedge_policy must be 'alert_only' or 'auto_within_band'")
+        if not self.max_unhedged_usd > 0 or not 0 < self.max_unhedged_lot_fraction <= 1:
+            p.append("max_unhedged_usd must be > 0 and max_unhedged_lot_fraction in (0, 1]")
+        if not self.request_timeout_s > 0:
+            p.append("request_timeout_s must be > 0 (a what-if without a timeout can hang the service)")
         return p
